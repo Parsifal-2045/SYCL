@@ -25,7 +25,7 @@ int main()
         auto in_a = buf_a.get_access<sycl::access::mode::read>(cgh);
         auto in_b = buf_b.get_access<sycl::access::mode::read>(cgh);
         auto out = buf_c.get_access<sycl::access::mode::write>(cgh);
-        cgh.parallel_for(sycl::range{N}, [=](sycl::id<1> idx)
+        cgh.parallel_for(sycl::range<1>(N), [=](sycl::id<1> idx)
         {
             out[idx] = in_a[idx] + in_b[idx];
         });
@@ -36,5 +36,7 @@ int main()
     {
         assert(c[i] == a[i] + b[i]);
     }
+
+    std::cout << "Correct!" << '\n';
 
 }
