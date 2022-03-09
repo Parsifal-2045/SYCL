@@ -1,6 +1,4 @@
 #include <CL/sycl.hpp>
-#include <CL/sycl/range.hpp>
-#include <CL/sycl/nd_range.hpp>
 #include <cassert>
 
 
