@@ -1,17 +1,6 @@
 #include <CL/sycl.hpp>
 #include <cassert>
-
-class USM_device_selector : public sycl::device_selector
-{
-    int operator()(const sycl::device &dev) const override
-    {
-        if (dev.has(sycl::aspect::usm_device_allocations))
-        {
-            return 1;
-        }
-        return -1;
-    }
-};
+#include "USM_selector.hpp"
 
 int square(int x)
 {
