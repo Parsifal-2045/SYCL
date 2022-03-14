@@ -20,7 +20,7 @@ int main()
     auto d_b = sycl::malloc_device<float>(N, queue);
     auto d_r = sycl::malloc_device<float>(N, queue);
     queue.memcpy(d_a, a.data(), N * sizeof(float)).wait();
-    queue.memcpy(d_b, b.data(), N * sizeof(float)).wait(); // multiple copies, wait at the end
+    queue.memcpy(d_b, b.data(), N * sizeof(float)).wait();
 
     queue.submit([&](sycl::handler &cgh)
     {
