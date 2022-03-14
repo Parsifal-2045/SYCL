@@ -16,6 +16,7 @@ int square(int x)
     }).wait();
     queue.memcpy(&x, device_ptr, sizeof(int)).wait();
     return x;
+    sycl::free(device_ptr, queue);
 }
 
 int main()
