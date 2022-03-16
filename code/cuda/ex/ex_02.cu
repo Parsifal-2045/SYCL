@@ -58,7 +58,7 @@ int main(int argc, char** argv)
   // Part 5 of 5: verify the data returned to the host is correct
   for (int i = 0; i < 8; ++i) {
     for (int j = 0; j < 8; ++j) {
-      // assert(h_a[i * numThreadsPerBlock + j] == i + j + 42);
+      assert(h_a[i * numThreadsPerBlock + j] == i + j + 42);
     }
   }
 
