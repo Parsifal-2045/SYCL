@@ -20,6 +20,7 @@ int main()
     }).wait();
 
     queue.memcpy(h_a.data(), d_a, memSize).wait();
+    sycl::free(d_a, queue);
 
     for(int i = 0; i != N; i++)
     {
