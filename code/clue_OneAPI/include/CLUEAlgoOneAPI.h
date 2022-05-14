@@ -126,7 +126,7 @@ private:
       queue.memcpy(points_.rho.data(), d_points.rho, sizeof(float) * points_.n);
       queue.memcpy(points_.delta.data(), d_points.delta, sizeof(float) * points_.n);
       queue.memcpy(points_.nearestHigher.data(), d_points.nearestHigher, sizeof(int) * points_.n);
-      queue.memcpy(points_.isSeed.data(), d_points.isSeed, sizeof(int) * points_.n);
+      queue.memcpy(points_.isSeed.data(), d_points.isSeed, sizeof(int) * points_.n).wait();
     }
   }
 
