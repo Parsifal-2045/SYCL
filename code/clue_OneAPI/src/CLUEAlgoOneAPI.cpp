@@ -15,9 +15,9 @@
 void kernel_compute_histogram(LayerTilesGPU *d_hist, const PointsPtr d_points, int numberOfPoints)
 {
   auto queue = sycl::queue{Intel_gpu_selector{}};
-  queue.submit([&] (sycl::handler &cgh)
+  queue.submit([&](sycl::handler &cgh)
   {
-    cgh.parallel_for(sycl::range<1>(numberOfPoints), [=] (sycl::id<1> idx)
+    cgh.parallel_for(sycl::range<1>(numberOfPoints), [=](sycl::id<1> idx)
     {
       int i = idx[0];
       if(i < numberOfPoints)
@@ -137,41 +137,43 @@ void kernel_calculate_distanceToHigher(LayerTilesGPU *d_hist, PointsPtr d_points
   }).wait(); 
 }
 
-__global__ void kernel_find_clusters(GPU::VecArray<int, maxNSeeds> *d_seeds,
-                                     GPU::VecArray<int, maxNFollowers> *d_followers,
-                                     PointsPtr d_points,
-                                     float outlierDeltaFactor, float dc, float rhoc,
-                                     int numberOfPoints)
+void kernel_find_clusters(GPU::VecArray<int, maxNSeeds> *d_seeds, GPU::VecArray<int, maxNFollowers> *d_followers, PointsPtr d_points, float outlierDeltaFactor, float dc, float rhoc, int numberOfPoints)
 {
-  int i = blockIdx.x * blockDim.x + threadIdx.x;
-
-  if (i < numberOfPoints)
+  auto queue = sycl::queue{Intel_gpu_selector{}};
+  queue.submit([&](sycl::handler &cgh)
   {
-    // initialize clusterIndex
-    d_points.clusterIndex[i] = -1;
-    // determine seed or outlier
-    float deltai = d_points.delta[i];
-    float rhoi = d_points.rho[i];
-    bool isSeed = (deltai > dc) && (rhoi >= rhoc);
-    bool isOutlier = (deltai > outlierDeltaFactor * dc) && (rhoi < rhoc);
-
-    if (isSeed)
+    cgh.parallel_for(sycl::range<1>(numberOfPoints), [=](sycl::id<1> idx)
     {
-      // set isSeed as 1
-      d_points.isSeed[i] = 1;
-      d_seeds[0].push_back(i); // head of d_seeds
-    }
-    else
-    {
-      if (!isOutlier)
+      int i = idx[0];
+      if (i < numberOfPoints)
       {
-        assert(d_points.nearestHigher[i] < numberOfPoints);
-        // register as follower at its nearest higher
-        d_followers[d_points.nearestHigher[i]].push_back(i);
+        // initialize clusterIndex
+        d_points.clusterIndex[i] = -1;
+        // determine seed or outlier
+        float deltai = d_points.delta[i];
+        float rhoi = d_points.rho[i];
+        bool isSeed = (deltai > dc) && (rhoi >= rhoc);
+        bool isOutlier = (deltai > outlierDeltaFactor * dc) && (rhoi < rhoc);
+
+        if (isSeed)
+        {
+          // set isSeed as 1
+          d_points.isSeed[i] = 1;
+          d_seeds[0].push_back(i); // head of d_seeds
+        }
+        else
+        {
+          if (!isOutlier)
+          {
+            assert(d_points.nearestHigher[i] < numberOfPoints);
+            // register as follower of its nearest higher
+            d_followers[d_points.nearestHigher[i]].push_back(i);
+          }
+        }
       }
-    }
-  }
-} // kernel
+    });
+  }).wait();
+}
 
 __global__ void kernel_assign_clusters(const GPU::VecArray<int, maxNSeeds> *d_seeds,
                                        const GPU::VecArray<int, maxNFollowers> *d_followers,
