@@ -175,53 +175,55 @@ void kernel_find_clusters(GPU::VecArray<int, maxNSeeds> *d_seeds, GPU::VecArray<
   }).wait();
 }
 
-__global__ void kernel_assign_clusters(const GPU::VecArray<int, maxNSeeds> *d_seeds,
-                                       const GPU::VecArray<int, maxNFollowers> *d_followers,
-                                       PointsPtr d_points, int numberOfPoints)
+void kernel_assign_clusters(const GPU::VecArray<int, maxNSeeds> *d_seeds, const GPU::VecArray<int, maxNFollowers> *d_followers, PointsPtr d_points, int numberOfPoints)
 {
-
-  int idxCls = blockIdx.x * blockDim.x + threadIdx.x;
-  const auto &seeds = d_seeds[0];
-  const auto nSeeds = seeds.size();
-  if (idxCls < nSeeds)
+  auto queue = sycl::queue{Intel_gpu_selector{}};
+  queue.submit([&](sycl::handler &cgh)
   {
-
-    int localStack[localStackSizePerSeed] = {-1};
-    int localStackSize = 0;
-
-    // asgine cluster to seed[idxCls]
-    int idxThisSeed = seeds[idxCls];
-    d_points.clusterIndex[idxThisSeed] = idxCls;
-    // push_back idThisSeed to localStack
-    localStack[localStackSize] = idxThisSeed;
-    localStackSize++;
-    // process all elements in localStack
-    while (localStackSize > 0)
+    cgh.parallel_for(sycl::range<1>(numberOfPoints), [=](sycl::id<1> idx)
     {
-      // get last element of localStack
-      int idxEndOflocalStack = localStack[localStackSize - 1];
-
-      int temp_clusterIndex = d_points.clusterIndex[idxEndOflocalStack];
-      // pop_back last element of localStack
-      localStack[localStackSize - 1] = -1;
-      localStackSize--;
-
-      // loop over followers of last element of localStack
-      for (int j : d_followers[idxEndOflocalStack])
+      int idxCls = idx[0];
+      const auto &seeds = d_seeds[0];
+      const auto nSeeds = seeds.size();
+      if(idxCls < nSeeds)
       {
-        // // pass id to follower
-        d_points.clusterIndex[j] = temp_clusterIndex;
-        // push_back follower to localStack
-        localStack[localStackSize] = j;
+        int localStack[localStackSizePerSeed] = {-1};
+        int localStackSize = 0;
+
+        // assign cluster to seed[idxCls]
+        int idxThisSeed = seeds[idxCls];
+        d_points.clusterIndex[idxThisSeed] = idxCls;
+        // push_back idThisSeed to localStack
+        localStack[localStackSize] = idxThisSeed;
         localStackSize++;
+        //process all elements in localStack
+        while (localStackSize > 0)
+        {
+          // get last element of localStack
+          int idxEndOflocalStack = localStack[localStackSize - 1];
+          int tempo_clusterIndex = d_points.clusterIndex[idxEndOflocalStack];
+          // pop_back last element of localStack
+          localStack[localStackSize - 1] = -1;
+          localStackSize--;
+
+          // loop over followers of last element of localStack
+          for (int j : d_followers[idxEndOflocalStack])
+          {
+            // pass id to follower
+            d_points.clusterIndex[j] = tempo_clusterIndex;
+            // push_back follower to localStack
+            localStack[localStackSize] = j;
+            localStackSize++;
+          }
+        }
       }
-    }
-  }
-} // kernel
+    });
+  }).wait();
+}
 
-void CLUEAlgoGPU::makeClusters()
+void CLUEAlgoOneAPI::makeClusters()
 {
-
+  
   copy_todevice();
   clear_set();
 
