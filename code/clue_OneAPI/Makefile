@@ -121,7 +121,7 @@ mainCuplaCUDA:mainCuplaCUDA.o CLUEAlgo.gpu.o
 CLUEAlgoOneAPI.o:src/CLUEAlgoOneAPI.cpp include/CLUEAlgoOneAPI.h
 	$(EXEC) $(DPCPP) $(ONEAPIINCLUDES) $(ONEAPI_CCFLAGS) -g -o $@ -c $<
 
-mainOneAPI.o:src/main.cc include/CLUEAlgoOneAPI.h include/GPUVecArray.h
+mainOneAPI.o:src/main.cc include/CLUEAlgoOneAPI.h include/OneAPIVecArray.h
 	$(EXEC) $(DPCPP) $(ONEAPIINCLUDES) $(ONEAPI_CCFLAGS) -g -o $@ -c $<
 
 mainOneAPI: mainOneAPI.o CLUEAlgoOneAPI.o
