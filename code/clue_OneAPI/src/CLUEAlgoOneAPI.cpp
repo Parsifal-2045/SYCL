@@ -14,7 +14,7 @@
 
 void kernel_compute_histogram(LayerTilesOneAPI *d_hist, const PointsPtr d_points, int numberOfPoints, sycl::nd_item<3> threadId)
 {
-  int i = threadId.get_group(2) * threadId.get_local_range().get(2) + threadId.get_local_id(2);
+  int i = threadId.get_group(0) * threadId.get_local_range().get(0) + threadId.get_local_id(0);
   if (i < numberOfPoints)
   {
     // push index of points into tiles
@@ -24,7 +24,7 @@ void kernel_compute_histogram(LayerTilesOneAPI *d_hist, const PointsPtr d_points
 
 void kernel_calculate_density(LayerTilesOneAPI *d_hist, PointsPtr d_points, float dc, int numberOfPoints, sycl::nd_item<3> threadId)
 {
-  int i = threadId.get_group(2) * threadId.get_local_range().get(2) + threadId.get_local_id(2);
+  int i = threadId.get_group(0) * threadId.get_local_range().get(0) + threadId.get_local_id(0);
   if (i < numberOfPoints)
   {
     double rhoi{0.};
@@ -62,7 +62,7 @@ void kernel_calculate_density(LayerTilesOneAPI *d_hist, PointsPtr d_points, floa
 
 void kernel_calculate_distanceToHigher(LayerTilesOneAPI *d_hist, PointsPtr d_points, float outlierDeltaFactor, float dc, int numberOfPoints, sycl::nd_item<3> threadId)
 {
-  int i = threadId.get_group(2) * threadId.get_local_range().get(2) + threadId.get_local_id(2);
+  int i = threadId.get_group(0) * threadId.get_local_range().get(0) + threadId.get_local_id(0);
   float dm = outlierDeltaFactor * dc;
   if (i < numberOfPoints)
   {
@@ -115,7 +115,7 @@ void kernel_calculate_distanceToHigher(LayerTilesOneAPI *d_hist, PointsPtr d_poi
 
 void kernel_find_clusters(GPU::VecArray<int, maxNSeeds> *d_seeds, GPU::VecArray<int, maxNFollowers> *d_followers, PointsPtr d_points, float outlierDeltaFactor, float dc, float rhoc, int numberOfPoints, sycl::nd_item<3> threadId)
 {
-  int i = threadId.get_group(2) * threadId.get_local_range().get(2) + threadId.get_local_id(2); 
+  int i = threadId.get_group(0) * threadId.get_local_range().get(0) + threadId.get_local_id(0); 
   if (i < numberOfPoints)
   {
     // initialize clusterIndex
@@ -146,7 +146,7 @@ void kernel_find_clusters(GPU::VecArray<int, maxNSeeds> *d_seeds, GPU::VecArray<
 
 void kernel_assign_clusters(const GPU::VecArray<int, maxNSeeds> *d_seeds, const GPU::VecArray<int, maxNFollowers> *d_followers, PointsPtr d_points, int numberOfPoints, sycl::nd_item<3> threadId)
 {
-  int idxCls = threadId.get_group(2) * threadId.get_local_range().get(2) + threadId.get_local_id(2);
+  int idxCls = threadId.get_group(0) * threadId.get_local_range().get(0) + threadId.get_local_id(0);
   const auto &seeds = d_seeds[0];
   const auto nSeeds = seeds.size();
   if (idxCls < nSeeds)
@@ -190,8 +190,8 @@ void CLUEAlgoOneAPI::makeClusters()
 
   // calculate rho, delta and find seeds
   // 1 point per thread
-  const sycl::range<3> blockSize(1, 1, 1024);
-  const sycl::range<3> gridSize(1, 1, ceil(points_.n / static_cast<float>(blockSize[2])));
+  const sycl::range<3> blockSize(1024, 1, 1);
+  const sycl::range<3> gridSize(ceil(points_.n / static_cast<float>(blockSize[2])), 1, 1);
   auto queue = sycl::queue{Intel_gpu_selector{}};
 
   queue.submit([&](sycl::handler &cgh)
