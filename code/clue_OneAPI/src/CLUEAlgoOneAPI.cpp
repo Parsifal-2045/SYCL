@@ -196,7 +196,7 @@ void CLUEAlgoOneAPI::makeClusters()
 
   queue.submit([&](sycl::handler &cgh)
   {
-    cgh.parallel_for(sycl::nd_range<3>(gridSize * blockSize, blockSize), [=](sycl::nd_item<3> threads)
+    cgh.parallel_for(sycl::nd_range<3>(gridSize * blockSize, blockSize), [=, this](sycl::nd_item<3> threads)
     {
       kernel_compute_histogram(d_hist, d_points, points_.n, threads);
     });
@@ -204,7 +204,7 @@ void CLUEAlgoOneAPI::makeClusters()
 
   queue.submit([&](sycl::handler &cgh)
   {
-    cgh.parallel_for(sycl::nd_range<3>(gridSize * blockSize, blockSize), [=](sycl::nd_item<3> threads)
+    cgh.parallel_for(sycl::nd_range<3>(gridSize * blockSize, blockSize), [=, this](sycl::nd_item<3> threads)
     {
       kernel_calculate_density(d_hist, d_points, outlierDeltaFactor_, points_.n, threads);
     });
@@ -212,7 +212,7 @@ void CLUEAlgoOneAPI::makeClusters()
 
   queue.submit([&](sycl::handler &cgh)
   {
-    cgh.parallel_for(sycl::nd_range<3>(gridSize * blockSize, blockSize), [=](sycl::nd_item<3> threads)
+    cgh.parallel_for(sycl::nd_range<3>(gridSize * blockSize, blockSize), [=, this](sycl::nd_item<3> threads)
     {
       kernel_calculate_distanceToHigher(d_hist, d_points, outlierDeltaFactor_, dc_, points_.n, threads);
     });
@@ -220,7 +220,7 @@ void CLUEAlgoOneAPI::makeClusters()
 
   queue.submit([&](sycl::handler &cgh)
   {
-    cgh.parallel_for(sycl::nd_range<3>(gridSize * blockSize, blockSize), [=](sycl::nd_item<3> threads)
+    cgh.parallel_for(sycl::nd_range<3>(gridSize * blockSize, blockSize), [=, this](sycl::nd_item<3> threads)
     {
       kernel_find_clusters(d_seeds, d_followers, d_points, outlierDeltaFactor_, dc_, rhoc_, points_.n, threads);
     });
@@ -232,7 +232,7 @@ void CLUEAlgoOneAPI::makeClusters()
 
   queue.submit([&](sycl::handler &cgh)
   {
-    cgh.parallel_for(sycl::nd_range<3>(gridSize_nseeds * blockSize, blockSize), [=](sycl::nd_item<3> threads)
+    cgh.parallel_for(sycl::nd_range<3>(gridSize_nseeds * blockSize, blockSize), [=, this](sycl::nd_item<3> threads)
     {
       kernel_assign_clusters(d_seeds, d_followers, d_points, points_.n, threads);
     });
