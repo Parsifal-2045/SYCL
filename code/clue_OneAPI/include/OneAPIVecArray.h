@@ -1,5 +1,6 @@
-#ifndef GPUVecArray_h
-#define GPUVecArray_h
+#ifndef OneAPIVecArray_h
+#define OneAPIVecArray_h
+#include <CL/sycl.hpp>
 
 //
 // Author: Felice Pantaleo, CERN
@@ -7,6 +8,16 @@
 
 namespace GPU
 {
+  inline int atomicAdd(int* i, int j = 1)
+  {
+    return sycl::atomic<int>(sycl::global_ptr<int>(i)).fetch_add(j);
+  }
+
+  inline int atomicSub(int* i, int j = 1)
+  {
+    return atomicAdd(i, -j);
+  }
+
   template <class T, int maxSize>
   struct VecArray
   {

@@ -8,7 +8,7 @@
 //OneAPI include
 #include <CL/sycl.hpp>
 
-#include "GPUVecArray.h"
+#include "OneAPIVecArray.h"
 #include "LayerTilesConstants.h"
 
 class LayerTilesOneAPI
