@@ -16,7 +16,7 @@ DPCPP := dpcpp
 # internal flags
 TARGET_SIZE := 64
 NVCCFLAGS   := -m${TARGET_SIZE}
-CCFLAGS     := -std=c++14
+CCFLAGS     := -std=c++14 
 LDFLAGS     :=
 
 # Debug build flags
@@ -35,6 +35,7 @@ INCLUDES   := -I include -I cupla/include -I cupla/alpaka/include
 ONEAPIINCLUDES := -I include -I /opt/intel/oneapi/compiler/2022.0.2/linux/include/sycl
 LIBRARIES  :=
 CUDA_FLAGS := -x cu
+ONEAPI_CCFLAGS := -std=c++20 -Wall -Wextra
 
 CUPLA_CPUTBB_ACC := -DFOR_TBB -I /usr/include/tbb -L /usr/lib/x86_64-linux-gnu -ltbb 
 ifeq ($(COMPUTER_NAME), patatrack02.cern.ch)
@@ -118,13 +119,13 @@ mainCuplaCUDA:mainCuplaCUDA.o CLUEAlgo.gpu.o
 
 #OneAPI
 CLUEAlgoOneAPI.o:src/CLUEAlgoOneAPI.cpp include/CLUEAlgoOneAPI.h
-	$(EXEC) $(DPCPP) $(ONEAPIINCLUDES) -g -o $@ -c $<
+	$(EXEC) $(DPCPP) $(ONEAPIINCLUDES) $(ONEAPI_CCFLAGS) -g -o $@ -c $<
 
 mainOneAPI.o:src/main.cc include/CLUEAlgoOneAPI.h include/GPUVecArray.h
-	$(EXEC) $(DPCPP) $(ONEAPIINCLUDES) -g -o $@ -c $<
+	$(EXEC) $(DPCPP) $(ONEAPIINCLUDES) $(ONEAPI_CCFLAGS) -g -o $@ -c $<
 
 mainOneAPI: mainOneAPI.o CLUEAlgoOneAPI.o
-	$(EXEC) $(DPCPP) -o $@ $^ $(ONEAPIINCLUDES)
+	$(EXEC) $(DPCPP) -o $@ $^
 
 run: build
 	$(EXEC) main
