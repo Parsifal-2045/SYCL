@@ -11,12 +11,12 @@
 #include "GPUVecArray.h"
 #include "LayerTilesConstants.h"
 
-class LayerTilesGPU
+class LayerTilesOneAPI
 {
 
 public:
   // constructor
-  LayerTilesGPU(){};
+  LayerTilesOneAPI(){};
 
   void fill(float x, float y, int i)
   {

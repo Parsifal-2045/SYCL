@@ -3,7 +3,7 @@
 
 #include <CL/sycl.hpp>
 #include "CLUEAlgo.h"
-#include "LayerTilesGPU.h"
+#include "LayerTilesOneAPI.h"
 #include "Intel_gpu_selector.h"
 
 static const int maxNSeeds = 100000;
@@ -48,7 +48,7 @@ private:
 
   // algorithm internal variables
   PointsPtr d_points;
-  LayerTilesGPU *d_hist;
+  LayerTilesOneAPI *d_hist;
   GPU::VecArray<int, maxNSeeds> *d_seeds;
   GPU::VecArray<int, maxNFollowers> *d_followers;
   sycl::queue queue = sycl::queue{Intel_gpu_selector{}};
@@ -69,7 +69,7 @@ private:
     d_points.clusterIndex = sycl::malloc_device<int>(reserve, queue);
     d_points.isSeed = sycl::malloc_device<int>(reserve, queue);
     // algorithm internal variables
-    d_hist = sycl::malloc_device<LayerTilesGPU>(NLAYERS, queue);
+    d_hist = sycl::malloc_device<LayerTilesOneAPI>(NLAYERS, queue);
     d_seeds = sycl::malloc_device<GPU::VecArray<int, maxNSeeds>>(1, queue);
     d_followers = sycl::malloc_device<GPU::VecArray<int, maxNFollowers>>(reserve, queue);
   }
@@ -111,7 +111,7 @@ private:
     queue.memset(d_points.clusterIndex, 0x00, sizeof(int) * points_.n);
     queue.memset(d_points.isSeed, 0x00, sizeof(int) * points_.n);
     // algorithm internal variables
-    queue.memset(d_hist, 0x00, sizeof(LayerTilesGPU) * NLAYERS);
+    queue.memset(d_hist, 0x00, sizeof(LayerTilesOneAPI) * NLAYERS);
     queue.memset(d_seeds, 0x00, sizeof(GPU::VecArray<int, maxNSeeds>));
     queue.memset(d_followers, 0x00, sizeof(GPU::VecArray<int, maxNFollowers>) * points_.n);
   }
