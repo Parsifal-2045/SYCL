@@ -9,7 +9,7 @@
 constexpr int numThreadsPerBlock = 1024;
 
 // Part 1 of 6: implement the kernel
-__global__ void block_sum(const int *input, int *result)
+__global__ void block_sum(const int *input, int *output)
 {
     __shared__ int sdata[numThreadsPerBlock];
 
@@ -32,7 +32,7 @@ __global__ void block_sum(const int *input, int *result)
 
     if (tid == 0)
     {
-        result[blockIdx.x] = sdata[0];
+        output[blockIdx.x] = sdata[0];
     }
 }
 
@@ -63,13 +63,13 @@ int main()
     cudaMalloc(&d_input, numInputElements * sizeof(int));
     cudaMemcpy(d_input, h_input.data(), numInputElements * sizeof(int), cudaMemcpyHostToDevice);
 
-    int *d_result;
-    cudaMalloc(&d_result, numOutputElements * sizeof(int));
+    int *d_output;
+    cudaMalloc(&d_output, numOutputElements * sizeof(int));
     
-    block_sum<<<gridSize, blockSize>>>(d_input, d_result);
+    block_sum<<<gridSize, blockSize>>>(d_input, d_output);
 
     int device_result[numOutputElements];
-    cudaMemcpy(&device_result, d_result, numOutputElements * sizeof(int), cudaMemcpyDeviceToHost);
+    cudaMemcpy(&device_result, d_output, numOutputElements * sizeof(int), cudaMemcpyDeviceToHost);
     for (int i = 1; i != numOutputElements; i++)
     {
         device_result[0] += device_result[i];
@@ -79,6 +79,6 @@ int main()
     std::cout << "Device sum: " << device_result[0] << std::endl;
 
     cudaFree(d_input);
-    cudaFree(d_result);
+    cudaFree(d_output);
     return 0;
 }
