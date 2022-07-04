@@ -6,28 +6,30 @@
 // Here you can set the device ID that was assigned to you
 #define MYDEVICE 0
 
-static const int num_elements = 2 << 20;
-static const int threads = 1024;
-static const int blocks = num_elements / threads;
+constexpr int numThreadsPerBlock = 1024;
 
 // Part 1 of 6: implement the kernel
 __global__ void block_sum(const int *input, int *result)
 {
-    __shared__ int sdata[threads];
-    int id = threadIdx.x + blockDim.x * blockIdx.x;
-    int tid = threadIdx.x;
+    __shared__ int sdata[numThreadsPerBlock];
 
-    sdata[tid] = input[id];
+    unsigned int tid = threadIdx.x;
+    unsigned int i = blockIdx.x * blockDim.x + threadIdx.x;
+
+    sdata[tid] = input[i];
+
     __syncthreads();
 
-    for (unsigned int s = blockDim.x / 2; s > 0; s >>=1)
+    for (unsigned int s = 1; s < blockDim.x; s *= 2)
     {
-        if (tid < s)
+        if (tid % (2 * s) == 0)
         {
             sdata[tid] += sdata[tid + s];
         }
+
         __syncthreads();
     }
+
     if (tid == 0)
     {
         result[blockIdx.x] = sdata[0];
@@ -37,39 +39,45 @@ __global__ void block_sum(const int *input, int *result)
 ////////////////////////////////////////////////////////////////////////////////
 // Program main
 ////////////////////////////////////////////////////////////////////////////////
-int main(void)
+int main()
 {
-    std::vector<int> h_input(num_elements);
-    /*
-        std::random_device rd;
-        std::mt19937 gen(rd());
-        std::uniform_int_distribution<> distrib(-10, 10);
-        for (auto &elt : h_input)
-        {
-            elt = distrib(gen);
-        }
-    */
-    for (int i = 0; i != num_elements; i++)
+    int numInputElements = 2048;
+    int numOutputElements;
+    numOutputElements = numInputElements / (numThreadsPerBlock / 2);
+    if (numInputElements % (numThreadsPerBlock / 2))
     {
-        h_input[i] = i;
+        numOutputElements++;
     }
+    std::vector<int> h_input(numInputElements);    
+    for (int i = 0; i != numInputElements; i++)
+    {
+        h_input[i] = 1;        
+    }
+
     const int host_result = std::accumulate(h_input.begin(), h_input.end(), 0);
-    std::cerr << "Host sum: " << host_result << std::endl;
+    
+    const dim3 blocSize(numThreadsPerBlock, 1, 1);
+    const dim3 gridSize(numOutputElements, 1, 1);
 
     int *d_input;
-    size_t memSize = num_elements * sizeof(int);
-    cudaMalloc(&d_input, memSize);
-    cudaMemcpy(d_input, h_input.data(), memSize, cudaMemcpyHostToDevice);
+    cudaMalloc(&d_input, numInputElements * sizeof(int));
+    cudaMemcpy(d_input, h_input.data(), numInputElements * sizeof(int), cudaMemcpyHostToDevice);
 
     int *d_result;
-    cudaMalloc(&d_result, sizeof(int));
-    block_sum<<<blocks, threads>>>(d_input, d_result);
-    int device_result;
-    cudaMemcpy(&device_result, d_result, sizeof(int), cudaMemcpyDeviceToHost);
+    cudaMalloc(&d_result, numOutputElements * sizeof(int));
+    
+    block_sum<<<gridSize, blocSize>>>(d_input, d_result);
 
-    std::cout << "Device sum: " << device_result << std::endl;
+    int device_result[numOutputElements];
+    cudaMemcpy(&device_result, d_result, numOutputElements * sizeof(int), cudaMemcpyDeviceToHost);
+    for (int i = 1; i != numOutputElements; i++)
+    {
+        device_result[0] += device_result[i];
+    }
 
-    // // Part 1 of 6: deallocate device memory
+    std::cout << "Host sum: " << host_result << std::endl;
+    std::cout << "Device sum: " << device_result[0] << std::endl;
+
     cudaFree(d_input);
     cudaFree(d_result);
     return 0;
