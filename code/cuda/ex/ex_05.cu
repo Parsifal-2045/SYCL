@@ -56,7 +56,7 @@ int main()
 
     const int host_result = std::accumulate(h_input.begin(), h_input.end(), 0);
     
-    const dim3 blocSize(numThreadsPerBlock, 1, 1);
+    const dim3 blockSize(numThreadsPerBlock, 1, 1);
     const dim3 gridSize(numOutputElements, 1, 1);
 
     int *d_input;
@@ -66,7 +66,7 @@ int main()
     int *d_result;
     cudaMalloc(&d_result, numOutputElements * sizeof(int));
     
-    block_sum<<<gridSize, blocSize>>>(d_input, d_result);
+    block_sum<<<gridSize, blockSize>>>(d_input, d_result);
 
     int device_result[numOutputElements];
     cudaMemcpy(&device_result, d_result, numOutputElements * sizeof(int), cudaMemcpyDeviceToHost);
