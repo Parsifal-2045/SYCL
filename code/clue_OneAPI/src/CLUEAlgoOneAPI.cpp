@@ -197,6 +197,7 @@ void CLUEAlgoOneAPI::makeClusters()
 
   queue.submit([&](sycl::handler &cgh)
   {
+    //SYCL kernels cannot capture by reference - need to reassign pointers inside the submit to pass by value
     auto d_hist_kernel = d_hist;
     auto d_points_kernel = d_points;
     auto num_points_kernel = points_.n;
