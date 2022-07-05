@@ -124,7 +124,17 @@ CLUEAlgoOneAPI.o:src/CLUEAlgoOneAPI.cpp include/CLUEAlgoOneAPI.h
 mainOneAPI.o:src/main.cc include/CLUEAlgoOneAPI.h include/OneAPIVecArray.h
 	$(EXEC) $(DPCPP) $(ONEAPIINCLUDES) $(ONEAPI_CCFLAGS) -g -o $@ -c $<
 
-mainOneAPI: mainOneAPI.o CLUEAlgoOneAPI.o
+mainOneAPI.out: mainOneAPI.o CLUEAlgoOneAPI.o
+	$(EXEC) $(DPCPP) -o $@ $^
+
+#OneAPI test
+CLUEAlgoOneAPI.o:src/CLUEAlgoOneAPI.cpp include/CLUEAlgoOneAPI.h
+	$(EXEC) $(DPCPP) $(ONEAPIINCLUDES) $(ONEAPI_CCFLAGS) -g -o $@ -c $<
+
+testOneAPI.o:src/test.cpp include/CLUEAlgoOneAPI.h
+	$(EXEC) $(DPCPP) $(ONEAPIINCLUDES) $(ONEAPI_CCFLAGS) -g -o $@ -c $<
+
+testOneAPI.out: testOneAPI.o CLUEAlgoOneAPI.o
 	$(EXEC) $(DPCPP) -o $@ $^
 
 run: build
