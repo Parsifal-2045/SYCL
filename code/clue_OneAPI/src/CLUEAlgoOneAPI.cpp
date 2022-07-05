@@ -190,39 +190,59 @@ void CLUEAlgoOneAPI::makeClusters()
 
   // calculate rho, delta and find seeds
   // 1 point per thread
-  const sycl::range<3> blockSize(1024, 1, 1);
-  const sycl::range<3> gridSize(ceil(points_.n / static_cast<float>(blockSize[2])), 1, 1);
+  const int numThreadsPerBlock = 256; // ThreadsPerBlock = work-group size
+  const sycl::range<3> blockSize(numThreadsPerBlock, 1, 1);
+  const sycl::range<3> gridSize(ceil(points_.n / static_cast<float>(blockSize[0])), 1, 1);
   auto queue = sycl::queue{Intel_gpu_selector{}};
 
   queue.submit([&](sycl::handler &cgh)
   {
-    cgh.parallel_for(sycl::nd_range<3>(gridSize * blockSize, blockSize), [=, this](sycl::nd_item<3> threads)
+    auto d_hist_kernel = d_hist;
+    auto d_points_kernel = d_points;
+    auto num_points_kernel = points_.n;
+    cgh.parallel_for(sycl::nd_range<3>(gridSize * blockSize, blockSize), [=](sycl::nd_item<3> threads)
     {
-      kernel_compute_histogram(d_hist, d_points, points_.n, threads);
+      kernel_compute_histogram(d_hist_kernel, d_points_kernel, num_points_kernel, threads);
     });
   });
 
   queue.submit([&](sycl::handler &cgh)
   {
-    cgh.parallel_for(sycl::nd_range<3>(gridSize * blockSize, blockSize), [=, this](sycl::nd_item<3> threads)
+    auto d_hist_kernel = d_hist;
+    auto d_points_kernel = d_points;
+    auto outlierDeltaFactor_kernel = outlierDeltaFactor_;
+    auto num_points_kernel = points_.n;
+    cgh.parallel_for(sycl::nd_range<3>(gridSize * blockSize, blockSize), [=](sycl::nd_item<3> threads)
     {
-      kernel_calculate_density(d_hist, d_points, outlierDeltaFactor_, points_.n, threads);
+      kernel_calculate_density(d_hist_kernel, d_points_kernel, outlierDeltaFactor_kernel, num_points_kernel, threads);
     });
   });
 
   queue.submit([&](sycl::handler &cgh)
   {
-    cgh.parallel_for(sycl::nd_range<3>(gridSize * blockSize, blockSize), [=, this](sycl::nd_item<3> threads)
+    auto d_hist_kernel = d_hist;
+    auto d_points_kernel = d_points;
+    auto outlierDeltaFactor_kernel = outlierDeltaFactor_;
+    auto dc_kernel = dc_;
+    auto num_points_kernel = points_.n;
+    cgh.parallel_for(sycl::nd_range<3>(gridSize * blockSize, blockSize), [=](sycl::nd_item<3> threads)
     {
-      kernel_calculate_distanceToHigher(d_hist, d_points, outlierDeltaFactor_, dc_, points_.n, threads);
+      kernel_calculate_distanceToHigher(d_hist_kernel, d_points_kernel, outlierDeltaFactor_kernel, dc_kernel, num_points_kernel, threads);
     });
   });
 
   queue.submit([&](sycl::handler &cgh)
   {
-    cgh.parallel_for(sycl::nd_range<3>(gridSize * blockSize, blockSize), [=, this](sycl::nd_item<3> threads)
+    auto d_seeds_kernel = d_seeds;
+    auto d_followers_kernel = d_followers;
+    auto d_points_kernel = d_points;
+    auto outlierDeltaFactor_kernel = outlierDeltaFactor_;
+    auto dc_kernel = dc_;
+    auto rhoc_kernel = rhoc_;
+    auto num_points_kernel = points_.n;
+    cgh.parallel_for(sycl::nd_range<3>(gridSize * blockSize, blockSize), [=](sycl::nd_item<3> threads)
     {
-      kernel_find_clusters(d_seeds, d_followers, d_points, outlierDeltaFactor_, dc_, rhoc_, points_.n, threads);
+      kernel_find_clusters(d_seeds_kernel, d_followers_kernel, d_points_kernel, outlierDeltaFactor_kernel, dc_kernel, rhoc_kernel, num_points_kernel, threads);
     });
   });
 
@@ -232,9 +252,13 @@ void CLUEAlgoOneAPI::makeClusters()
 
   queue.submit([&](sycl::handler &cgh)
   {
-    cgh.parallel_for(sycl::nd_range<3>(gridSize_nseeds * blockSize, blockSize), [=, this](sycl::nd_item<3> threads)
+    auto d_seeds_kernel = d_seeds;
+    auto d_followers_kernel = d_followers;
+    auto d_points_kernel = d_points;
+    auto num_points_kernel = points_.n;
+    cgh.parallel_for(sycl::nd_range<3>(gridSize_nseeds * blockSize, blockSize), [=](sycl::nd_item<3> threads)
     {
-      kernel_assign_clusters(d_seeds, d_followers, d_points, points_.n, threads);
+      kernel_assign_clusters(d_seeds_kernel, d_followers_kernel, d_points_kernel, num_points_kernel, threads);
     });
   });
 
