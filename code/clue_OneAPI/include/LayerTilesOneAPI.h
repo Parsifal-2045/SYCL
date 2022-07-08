@@ -5,7 +5,7 @@
 #include <cmath>
 #include <algorithm>
 #include <cstdint>
-//OneAPI include
+// OneAPI include
 #include <CL/sycl.hpp>
 
 #include "OneAPIVecArray.h"
@@ -36,7 +36,6 @@ public:
     int yBin = (y - LayerTilesConstants::minY) * LayerTilesConstants::rY;
     yBin = (yBin < LayerTilesConstants::nRows ? yBin : LayerTilesConstants::nRows - 1);
     yBin = (yBin > 0 ? yBin : 0);
-    ;
     return yBin;
   }
 

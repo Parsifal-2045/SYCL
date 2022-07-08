@@ -1,13 +1,14 @@
 #ifndef Points_h
 #define Points_h
 
-struct Points {
-  
+struct Points
+{
+
   std::vector<float> x;
   std::vector<float> y;
   std::vector<int> layer;
   std::vector<float> weight;
-  
+
   std::vector<float> rho;
   std::vector<float> delta;
   std::vector<int> nearestHigher;
@@ -21,7 +22,8 @@ struct Points {
 
   int n;
 
-  void clear() {
+  void clear()
+  {
     x.clear();
     y.clear();
     layer.clear();
