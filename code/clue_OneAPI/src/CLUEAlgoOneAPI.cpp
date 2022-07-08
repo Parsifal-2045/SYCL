@@ -4,7 +4,6 @@
 
 // OneAPI Add
 #include <CL/sycl.hpp>
-#include "Intel_gpu_selector.h"
 // for timing
 #include <chrono>
 #include <ctime>
@@ -12,9 +11,9 @@
 
 #include "CLUEAlgoOneAPI.h"
 
-void kernel_compute_histogram(LayerTilesOneAPI *d_hist, const PointsPtr d_points, int numberOfPoints, sycl::nd_item<3> threadId)
+void kernel_compute_histogram(LayerTilesOneAPI *d_hist, const PointsPtr d_points, int numberOfPoints, sycl::nd_item<3> item)
 {
-  int i = threadId.get_group(0) * threadId.get_local_range().get(0) + threadId.get_local_id(0);
+  int i = item.get_group(0) * item.get_local_range().get(0) + item.get_local_id(0);
   if (i < numberOfPoints)
   {
     // push index of points into tiles
@@ -22,9 +21,9 @@ void kernel_compute_histogram(LayerTilesOneAPI *d_hist, const PointsPtr d_points
   }
 }
 
-void kernel_calculate_density(LayerTilesOneAPI *d_hist, PointsPtr d_points, float dc, int numberOfPoints, sycl::nd_item<3> threadId)
+void kernel_calculate_density(LayerTilesOneAPI *d_hist, PointsPtr d_points, float dc, int numberOfPoints, sycl::nd_item<3> item)
 {
-  int i = threadId.get_group(0) * threadId.get_local_range().get(0) + threadId.get_local_id(0);
+  int i = item.get_group(0) * item.get_local_range().get(0) + item.get_local_id(0);
   if (i < numberOfPoints)
   {
     double rhoi{0.};
@@ -34,9 +33,9 @@ void kernel_calculate_density(LayerTilesOneAPI *d_hist, PointsPtr d_points, floa
     //get search box
     sycl::int4 search_box = d_hist[layeri].searchBox(xi - dc, xi + dc, yi - dc, yi + dc);        
     //loop over bins in the search box
-    for (int xBin = search_box[0]; xBin < search_box[1] + 1; xBin++)
+    for (int xBin = search_box.x(); xBin < search_box.y() + 1; xBin++)
     {
-      for(int yBin = search_box[2]; yBin < search_box[3] + 1; yBin++)
+      for(int yBin = search_box.z(); yBin < search_box.w() + 1; yBin++)
       {
         //get the id of this bin
         int binId = d_hist[layeri].getGlobalBinByBin(xBin, yBin);
@@ -60,9 +59,9 @@ void kernel_calculate_density(LayerTilesOneAPI *d_hist, PointsPtr d_points, floa
   }
 }
 
-void kernel_calculate_distanceToHigher(LayerTilesOneAPI *d_hist, PointsPtr d_points, float outlierDeltaFactor, float dc, int numberOfPoints, sycl::nd_item<3> threadId)
+void kernel_calculate_distanceToHigher(LayerTilesOneAPI *d_hist, PointsPtr d_points, float outlierDeltaFactor, float dc, int numberOfPoints, sycl::nd_item<3> item)
 {
-  int i = threadId.get_group(0) * threadId.get_local_range().get(0) + threadId.get_local_id(0);
+  int i = item.get_group(0) * item.get_local_range().get(0) + item.get_local_id(0);
   float dm = outlierDeltaFactor * dc;
   if (i < numberOfPoints)
   {
@@ -75,9 +74,9 @@ void kernel_calculate_distanceToHigher(LayerTilesOneAPI *d_hist, PointsPtr d_poi
     // get search box
     sycl::int4 search_box = d_hist[layeri].searchBox(xi - dm, xi + dm, yi - dm, yi + dm);
     // loop over all bins in the search box
-    for (int xBin = search_box[0]; xBin < search_box[1] + 1; xBin++)
+    for (int xBin = search_box.x(); xBin < search_box.y() + 1; xBin++)
     {
-      for (int yBin = search_box[2]; yBin < search_box[3] + 1; yBin++)
+      for (int yBin = search_box.z(); yBin < search_box.w() + 1; yBin++)
       {
         // get the id of this bin
         int binId = d_hist[layeri].getGlobalBinByBin(xBin, yBin);
@@ -113,9 +112,9 @@ void kernel_calculate_distanceToHigher(LayerTilesOneAPI *d_hist, PointsPtr d_poi
   }
 }
 
-void kernel_find_clusters(GPU::VecArray<int, maxNSeeds> *d_seeds, GPU::VecArray<int, maxNFollowers> *d_followers, PointsPtr d_points, float outlierDeltaFactor, float dc, float rhoc, int numberOfPoints, sycl::nd_item<3> threadId)
+void kernel_find_clusters(GPU::VecArray<int, maxNSeeds> *d_seeds, GPU::VecArray<int, maxNFollowers> *d_followers, PointsPtr d_points, float outlierDeltaFactor, float dc, float rhoc, int numberOfPoints, sycl::nd_item<3> item)
 {
-  int i = threadId.get_group(0) * threadId.get_local_range().get(0) + threadId.get_local_id(0); 
+  int i = item.get_group(0) * item.get_local_range().get(0) + item.get_local_id(0); 
   if (i < numberOfPoints)
   {
     // initialize clusterIndex
@@ -144,9 +143,9 @@ void kernel_find_clusters(GPU::VecArray<int, maxNSeeds> *d_seeds, GPU::VecArray<
   }
 }
 
-void kernel_assign_clusters(const GPU::VecArray<int, maxNSeeds> *d_seeds, const GPU::VecArray<int, maxNFollowers> *d_followers, PointsPtr d_points, int numberOfPoints, sycl::nd_item<3> threadId)
+void kernel_assign_clusters(const GPU::VecArray<int, maxNSeeds> *d_seeds, const GPU::VecArray<int, maxNFollowers> *d_followers, PointsPtr d_points, int numberOfPoints, sycl::nd_item<3> item)
 {
-  int idxCls = threadId.get_group(0) * threadId.get_local_range().get(0) + threadId.get_local_id(0);
+  int idxCls = item.get_group(0) * item.get_local_range().get(0) + item.get_local_id(0);
   const auto &seeds = d_seeds[0];
   const auto nSeeds = seeds.size();
   if (idxCls < nSeeds)
@@ -165,7 +164,7 @@ void kernel_assign_clusters(const GPU::VecArray<int, maxNSeeds> *d_seeds, const 
     {
       // get last element of localStack
       int idxEndOflocalStack = localStack[localStackSize - 1];
-      int tempo_clusterIndex = d_points.clusterIndex[idxEndOflocalStack];
+      int temp_clusterIndex = d_points.clusterIndex[idxEndOflocalStack];
       // pop_back last element of localStack
       localStack[localStackSize - 1] = -1;
       localStackSize--;
@@ -174,7 +173,7 @@ void kernel_assign_clusters(const GPU::VecArray<int, maxNSeeds> *d_seeds, const 
       for (int j : d_followers[idxEndOflocalStack])
       {
         // pass id to follower
-        d_points.clusterIndex[j] = tempo_clusterIndex;
+        d_points.clusterIndex[j] = temp_clusterIndex;
         // push_back follower to localStack
         localStack[localStackSize] = j;
         localStackSize++;
@@ -190,49 +189,48 @@ void CLUEAlgoOneAPI::makeClusters()
 
   // calculate rho, delta and find seeds
   // 1 point per thread
-  const int numThreadsPerBlock = 256; // ThreadsPerBlock = work-group size
+  const int numThreadsPerBlock = 128; // ThreadsPerBlock = work-group size
   const sycl::range<3> blockSize(numThreadsPerBlock, 1, 1);
   const sycl::range<3> gridSize(ceil(points_.n / static_cast<float>(blockSize[0])), 1, 1);
-  auto queue = sycl::queue{Intel_gpu_selector{}};
 
-  queue.submit([&](sycl::handler &cgh)
+  queue_.submit([&](sycl::handler &cgh)
   {
     //SYCL kernels cannot capture by reference - need to reassign pointers inside the submit to pass by value
     auto d_hist_kernel = d_hist;
     auto d_points_kernel = d_points;
     auto num_points_kernel = points_.n;
-    cgh.parallel_for(sycl::nd_range<3>(gridSize * blockSize, blockSize), [=](sycl::nd_item<3> threads)
+    cgh.parallel_for(sycl::nd_range<3>(gridSize * blockSize, blockSize), [=](sycl::nd_item<3> item)
     {
-      kernel_compute_histogram(d_hist_kernel, d_points_kernel, num_points_kernel, threads);
+      kernel_compute_histogram(d_hist_kernel, d_points_kernel, num_points_kernel, item);
     });
-  });
+  }).wait();
 
-  queue.submit([&](sycl::handler &cgh)
+  queue_.submit([&](sycl::handler &cgh)
   {
     auto d_hist_kernel = d_hist;
     auto d_points_kernel = d_points;
-    auto outlierDeltaFactor_kernel = outlierDeltaFactor_;
+    auto dc_kernel = dc_;
     auto num_points_kernel = points_.n;
-    cgh.parallel_for(sycl::nd_range<3>(gridSize * blockSize, blockSize), [=](sycl::nd_item<3> threads)
+    cgh.parallel_for(sycl::nd_range<3>(gridSize * blockSize, blockSize), [=](sycl::nd_item<3> item)
     {
-      kernel_calculate_density(d_hist_kernel, d_points_kernel, outlierDeltaFactor_kernel, num_points_kernel, threads);
+      kernel_calculate_density(d_hist_kernel, d_points_kernel, dc_kernel, num_points_kernel, item);
     });
-  });
+  }).wait();
 
-  queue.submit([&](sycl::handler &cgh)
+  queue_.submit([&](sycl::handler &cgh)
   {
     auto d_hist_kernel = d_hist;
     auto d_points_kernel = d_points;
     auto outlierDeltaFactor_kernel = outlierDeltaFactor_;
     auto dc_kernel = dc_;
     auto num_points_kernel = points_.n;
-    cgh.parallel_for(sycl::nd_range<3>(gridSize * blockSize, blockSize), [=](sycl::nd_item<3> threads)
+    cgh.parallel_for(sycl::nd_range<3>(gridSize * blockSize, blockSize), [=](sycl::nd_item<3> item)
     {
-      kernel_calculate_distanceToHigher(d_hist_kernel, d_points_kernel, outlierDeltaFactor_kernel, dc_kernel, num_points_kernel, threads);
+      kernel_calculate_distanceToHigher(d_hist_kernel, d_points_kernel, outlierDeltaFactor_kernel, dc_kernel, num_points_kernel, item);
     });
-  });
+  }).wait();
 
-  queue.submit([&](sycl::handler &cgh)
+  queue_.submit([&](sycl::handler &cgh)
   {
     auto d_seeds_kernel = d_seeds;
     auto d_followers_kernel = d_followers;
@@ -241,27 +239,27 @@ void CLUEAlgoOneAPI::makeClusters()
     auto dc_kernel = dc_;
     auto rhoc_kernel = rhoc_;
     auto num_points_kernel = points_.n;
-    cgh.parallel_for(sycl::nd_range<3>(gridSize * blockSize, blockSize), [=](sycl::nd_item<3> threads)
+    cgh.parallel_for(sycl::nd_range<3>(gridSize * blockSize, blockSize), [=](sycl::nd_item<3> item)
     {
-      kernel_find_clusters(d_seeds_kernel, d_followers_kernel, d_points_kernel, outlierDeltaFactor_kernel, dc_kernel, rhoc_kernel, num_points_kernel, threads);
+      kernel_find_clusters(d_seeds_kernel, d_followers_kernel, d_points_kernel, outlierDeltaFactor_kernel, dc_kernel, rhoc_kernel, num_points_kernel, item);
     });
-  });
+  }).wait();
 
   // assign clusters
   // 1 point per seeds
-  const sycl::range<3> gridSize_nseeds(ceil(maxNSeeds / 1024.0), 1, 1);
+  const sycl::range<3> gridSize_nseeds(ceil(maxNSeeds / static_cast<double>(blockSize[0])), 1, 1);
 
-  queue.submit([&](sycl::handler &cgh)
+  queue_.submit([&](sycl::handler &cgh)
   {
     auto d_seeds_kernel = d_seeds;
     auto d_followers_kernel = d_followers;
     auto d_points_kernel = d_points;
     auto num_points_kernel = points_.n;
-    cgh.parallel_for(sycl::nd_range<3>(gridSize_nseeds * blockSize, blockSize), [=](sycl::nd_item<3> threads)
+    cgh.parallel_for(sycl::nd_range<3>(gridSize_nseeds * blockSize, blockSize), [=](sycl::nd_item<3> item)
     {
-      kernel_assign_clusters(d_seeds_kernel, d_followers_kernel, d_points_kernel, num_points_kernel, threads);
+      kernel_assign_clusters(d_seeds_kernel, d_followers_kernel, d_points_kernel, num_points_kernel, item);
     });
-  });
+  }).wait();
 
   copy_tohost();
 }
