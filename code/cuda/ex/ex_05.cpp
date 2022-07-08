@@ -74,10 +74,18 @@ int main()
         });
     }).wait();
 
-    std::vector<int> device_output(numOutputElements);
-    queue.memcpy(device_output.data(), d_output, numOutputElements * sizeof(int)).wait();
+    queue.submit([&](sycl::handler &cgh)
+    {
+        sycl::accessor<int, 1, sycl::access::mode::read_write, sycl::access::target::local> sdata(sycl::range<1>(numThreadsPerBlock), cgh);
+        cgh.parallel_for(sycl::nd_range<3>(blockSize, blockSize), [=](sycl::nd_item<3> item)
+        {
+            block_sum(d_output, d_output, item, sdata.get_pointer());
+        });
+    });
+    
+    int device_result;
+    queue.memcpy(&device_result, d_output, sizeof(int)).wait();
 
-    int device_result = std::accumulate(device_output.begin(), device_output.end(), 0);
     std::cout << "Host sum: " << host_result << std::endl;
     std::cout << "Device sum: " << device_result << std::endl;
     

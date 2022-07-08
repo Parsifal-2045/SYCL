@@ -68,15 +68,13 @@ int main()
     
     block_sum<<<gridSize, blockSize>>>(d_input, d_output);
 
-    int device_result[numOutputElements];
-    cudaMemcpy(&device_result, d_output, numOutputElements * sizeof(int), cudaMemcpyDeviceToHost);
-    for (int i = 1; i != numOutputElements; i++)
-    {
-        device_result[0] += device_result[i];
-    }
+    block_sum<<<1, blockSize>>>(d_output, d_output);
+
+    int device_result;
+    cudaMemcpy(&device_result, d_output, sizeof(int), cudaMemcpyDeviceToHost);
 
     std::cout << "Host sum: " << host_result << std::endl;
-    std::cout << "Device sum: " << device_result[0] << std::endl;
+    std::cout << "Device sum: " << device_result << std::endl;
 
     cudaFree(d_input);
     cudaFree(d_output);
