@@ -3,6 +3,7 @@
 #include <numeric>
 #include <random>
 #include <vector>
+#include <cassert>
 #include "../../Intel_gpu_selector.hpp"
 
 constexpr int numThreadsPerBlock = 256;
@@ -81,10 +82,12 @@ int main()
         {
             block_sum(d_output, d_output, item, sdata.get_pointer());
         });
-    });
+    }).wait();
     
     int device_result;
     queue.memcpy(&device_result, d_output, sizeof(int)).wait();
+
+    assert(host_result == device_result);
 
     std::cout << "Host sum: " << host_result << std::endl;
     std::cout << "Device sum: " << device_result << std::endl;
