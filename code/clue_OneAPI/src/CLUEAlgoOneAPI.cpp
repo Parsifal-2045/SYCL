@@ -112,7 +112,7 @@ void kernel_calculate_distanceToHigher(LayerTilesOneAPI *d_hist, PointsPtr d_poi
   }
 }
 
-void kernel_find_clusters(GPU::VecArray<int, maxNSeeds> *d_seeds, GPU::VecArray<int, maxNFollowers> *d_followers, PointsPtr d_points, float outlierDeltaFactor, float dc, float rhoc, int numberOfPoints, sycl::nd_item<3> item)
+void kernel_find_clusters(OneAPI::VecArray<int, maxNSeeds> *d_seeds, OneAPI::VecArray<int, maxNFollowers> *d_followers, PointsPtr d_points, float outlierDeltaFactor, float dc, float rhoc, int numberOfPoints, sycl::nd_item<3> item)
 {
   int i = item.get_group(0) * item.get_local_range().get(0) + item.get_local_id(0); 
   if (i < numberOfPoints)
@@ -143,7 +143,7 @@ void kernel_find_clusters(GPU::VecArray<int, maxNSeeds> *d_seeds, GPU::VecArray<
   }
 }
 
-void kernel_assign_clusters(const GPU::VecArray<int, maxNSeeds> *d_seeds, const GPU::VecArray<int, maxNFollowers> *d_followers, PointsPtr d_points, int numberOfPoints, sycl::nd_item<3> item)
+void kernel_assign_clusters(const OneAPI::VecArray<int, maxNSeeds> *d_seeds, const OneAPI::VecArray<int, maxNFollowers> *d_followers, PointsPtr d_points, int numberOfPoints, sycl::nd_item<3> item)
 {
   int idxCls = item.get_group(0) * item.get_local_range().get(0) + item.get_local_id(0);
   const auto &seeds = d_seeds[0];

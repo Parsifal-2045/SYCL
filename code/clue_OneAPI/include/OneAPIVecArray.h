@@ -6,7 +6,7 @@
 // Author: Felice Pantaleo, CERN
 //
 
-namespace GPU
+namespace OneAPI
 {
   inline int atomicAdd(int* i, int j = 1)
   {
@@ -126,6 +126,6 @@ namespace GPU
     T m_data[maxSize];
   };
 
-} // end namespace GPU
+} // end namespace OneAPI
 
-#endif // GPUVecArray_h
+#endif // OneAPIVecArray_h

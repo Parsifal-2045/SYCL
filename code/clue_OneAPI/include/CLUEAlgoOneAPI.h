@@ -4,25 +4,8 @@
 #include <CL/sycl.hpp>
 #include "CLUEAlgo.h"
 #include "LayerTilesOneAPI.h"
+#include "PointsPtr.h"
 #include "Intel_gpu_selector.h"
-
-static const int maxNSeeds = 100000;
-static const int maxNFollowers = 32;
-static const int localStackSizePerSeed = 32;
-
-struct PointsPtr
-{
-  float *x;
-  float *y;
-  int *layer;
-  float *weight;
-
-  float *rho;
-  float *delta;
-  int *nearestHigher;
-  int *clusterIndex;
-  int *isSeed;
-};
 
 class CLUEAlgoOneAPI : public CLUEAlgo
 {
@@ -49,8 +32,8 @@ private:
   // algorithm internal variables
   PointsPtr d_points;
   LayerTilesOneAPI *d_hist;
-  GPU::VecArray<int, maxNSeeds> *d_seeds;
-  GPU::VecArray<int, maxNFollowers> *d_followers;
+  OneAPI::VecArray<int, maxNSeeds> *d_seeds;
+  OneAPI::VecArray<int, maxNFollowers> *d_followers;
   sycl::queue queue_ = sycl::queue{Intel_gpu_selector{}};
 
   // private methods
@@ -70,8 +53,8 @@ private:
     d_points.isSeed = sycl::malloc_device<int>(reserve, queue_);
     // algorithm internal variables
     d_hist = sycl::malloc_device<LayerTilesOneAPI>(NLAYERS, queue_);
-    d_seeds = sycl::malloc_device<GPU::VecArray<int, maxNSeeds>>(1, queue_);
-    d_followers = sycl::malloc_device<GPU::VecArray<int, maxNFollowers>>(reserve, queue_);
+    d_seeds = sycl::malloc_device<OneAPI::VecArray<int, maxNSeeds>>(1, queue_);
+    d_followers = sycl::malloc_device<OneAPI::VecArray<int, maxNFollowers>>(reserve, queue_);
   }
 
   void free_device()
@@ -112,8 +95,8 @@ private:
     queue_.memset(d_points.isSeed, 0x00, sizeof(int) * points_.n);
     // algorithm internal variables
     queue_.memset(d_hist, 0x00, sizeof(LayerTilesOneAPI) * NLAYERS);
-    queue_.memset(d_seeds, 0x00, sizeof(GPU::VecArray<int, maxNSeeds>));
-    queue_.memset(d_followers, 0x00, sizeof(GPU::VecArray<int, maxNFollowers>) * points_.n).wait();
+    queue_.memset(d_seeds, 0x00, sizeof(OneAPI::VecArray<int, maxNSeeds>));
+    queue_.memset(d_followers, 0x00, sizeof(OneAPI::VecArray<int, maxNFollowers>) * points_.n).wait();
   }
 
   void copy_tohost()

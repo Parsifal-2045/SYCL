@@ -60,12 +60,12 @@ public:
       t.reset();
   }
 
-  GPU::VecArray<int, LayerTilesConstants::maxTileDepth> &operator[](int globalBinId)
+  OneAPI::VecArray<int, LayerTilesConstants::maxTileDepth> &operator[](int globalBinId)
   {
     return layerTiles_[globalBinId];
   }
 
 private:
-  GPU::VecArray<GPU::VecArray<int, LayerTilesConstants::maxTileDepth>, LayerTilesConstants::nColumns * LayerTilesConstants::nRows> layerTiles_;
+  OneAPI::VecArray<OneAPI::VecArray<int, LayerTilesConstants::maxTileDepth>, LayerTilesConstants::nColumns * LayerTilesConstants::nRows> layerTiles_;
 };
 #endif

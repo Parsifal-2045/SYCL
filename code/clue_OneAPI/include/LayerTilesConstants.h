@@ -6,6 +6,10 @@
 
 #define NLAYERS 100
 
+constexpr int maxNSeeds = 100000;
+constexpr int maxNFollowers = 32;
+constexpr int localStackSizePerSeed = 32;
+
 namespace LayerTilesConstants
 {
 
