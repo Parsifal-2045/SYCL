@@ -189,7 +189,7 @@ void CLUEAlgoOneAPI::makeClusters()
 
   // calculate rho, delta and find seeds
   // 1 point per thread
-  const int numThreadsPerBlock = 128; // ThreadsPerBlock = work-group size
+  const int numThreadsPerBlock = 256; // ThreadsPerBlock = work-group size
   const sycl::range<3> blockSize(numThreadsPerBlock, 1, 1);
   const sycl::range<3> gridSize(ceil(points_.n / static_cast<float>(blockSize[0])), 1, 1);
 
