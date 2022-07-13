@@ -30,12 +30,12 @@ NVCCFLAGS += $(addprefix -Xcompiler ,$(CCFLAGS))
 ALL_LDFLAGS :=
 NVCC_LDFLAGS += $(addprefix -Xlinker ,$(LDFLAGS))
 
-# Common includes and paths for CUDA and OneAPI
+# Common includes and paths for CUDA and SYCL
 INCLUDES   := -I include -I cupla/include -I cupla/alpaka/include
-ONEAPIINCLUDES := -I include -I /opt/intel/oneapi/compiler/2022.0.2/linux/include/sycl
+SYCLINCLUDES := -I include -I /opt/intel/oneapi/compiler/2022.0.2/linux/include/sycl
 LIBRARIES  :=
 CUDA_FLAGS := -x cu
-ONEAPI_CCFLAGS := -std=c++20 -Wall -Wextra
+SYCL_CCFLAGS := -std=c++20 #-Wall -Wextra
 
 CUPLA_CPUTBB_ACC := -DFOR_TBB -I /usr/include/tbb -L /usr/lib/x86_64-linux-gnu -ltbb 
 ifeq ($(COMPUTER_NAME), patatrack02.cern.ch)
@@ -81,7 +81,7 @@ all: build
 #       corresponding CUDA one built using CUPLA. Which one to use must be
 #       selected at runtime via a flag.
 
-build: main mainCuplaCPUTBB mainCuplaCUDA mainOneAPI
+build: main mainCuplaCPUTBB mainCuplaCUDA mainSYCL
 
 # Native C++ implementation bundled with native CUDA
 CLUEAlgo.cuda.o:src/CLUEAlgoGPU.cu include/CLUEAlgoGPU.h
@@ -118,19 +118,19 @@ mainCuplaCUDA:mainCuplaCUDA.o CLUEAlgo.gpu.o
 	$(EXEC) $(NVCC) $(INCLUDES) $(NVCCFLAGS) $(CUPLA_CUDA_ACC) $(GENCODE_FLAGS) $(CUPLA_FLAGS) -o $@ $^
 
 #OneAPI
-CLUEAlgoOneAPI.o:src/CLUEAlgoOneAPI.cpp include/CLUEAlgoOneAPI.h
-	$(EXEC) $(DPCPP) $(ONEAPIINCLUDES) $(ONEAPI_CCFLAGS) -g -o $@ -c $<
+CLUEAlgoSYCL.o:src/CLUEAlgoSYCL.cpp include/CLUEAlgoSYCL.h
+	$(EXEC) $(DPCPP) $(SYCLINCLUDES) $(SYCL_CCFLAGS) -g -o $@ -c $<
 
-mainOneAPI.o:src/main.cc include/CLUEAlgoOneAPI.h include/OneAPIVecArray.h
-	$(EXEC) $(DPCPP) $(ONEAPIINCLUDES) $(ONEAPI_CCFLAGS) -g -o $@ -c $<
+mainSYCL.o:src/main.cc include/CLUEAlgoSYCL.h include/SYCLVecArray.h
+	$(EXEC) $(DPCPP) $(SYCLINCLUDES) $(SYCL_CCFLAGS) -g -o $@ -c $<
 
-mainOneAPI: mainOneAPI.o CLUEAlgoOneAPI.o
+mainSYCL: mainSYCL.o CLUEAlgoSYCL.o
 	$(EXEC) $(DPCPP) -o $@ $^
 
 run: build
 	$(EXEC) main
 
 clean:
-	rm -f main mainCuplaCPUTBB mainCuplaCUDA *.o
+	rm -f main mainCuplaCPUTBB mainCuplaCUDA mainSYCL *.o
 
 clobber: clean

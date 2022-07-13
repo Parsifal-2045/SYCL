@@ -2,14 +2,55 @@
 #include <fstream>
 #include <string>
 #include <chrono>
-#include "CLUEAlgoOneAPI.h"
-#ifdef FOR_TBB
-#include "tbb/task_scheduler_init.h"
-#endif
+#include <regex>
+#include "CLUEAlgo.h"
+#include "CLUEAlgoSYCL.h"
 
-void mainRun(std::string inputFileName, std::string outputFileName, float dc, float rhoc, float outlierDeltaFactor, bool useGPU, int repeats, bool verbose)
-{ 
+using namespace std;
+
+template <typename T>
+std::string to_string_with_precision(const T a_value, const int n = 6)
+{
+  std::ostringstream out;
+  out.precision(n);
+  out << std::fixed << a_value;
+  return out.str();
+}
+
+std::string create_outputfileName(std::string inputFileName, float dc,
+                                  float rhoc, float outlierDeltaFactor,
+                                  bool useParallel)
+{
+  std::string underscore = "_", suffix = "";
+  suffix.append(underscore);
+  suffix.append(to_string_with_precision(dc, 2));
+  suffix.append(underscore);
+  suffix.append(to_string_with_precision(rhoc, 2));
+  suffix.append(underscore);
+  suffix.append(to_string_with_precision(outlierDeltaFactor, 2));
+  suffix.append(".csv");
+
+  std::string tmpFileName;
+  std::regex regexp("input");
+  std::regex_replace(back_inserter(tmpFileName),
+                     inputFileName.begin(), inputFileName.end(), regexp, "output");
+
+  std::string outputFileName;
+  std::regex regexp2(".csv");
+  std::regex_replace(back_inserter(outputFileName),
+                     tmpFileName.begin(), tmpFileName.end(), regexp2, suffix);
+
+  return outputFileName;
+}
+
+void mainRun(std::string inputFileName, std::string outputFileName,
+             float dc, float rhoc, float outlierDeltaFactor,
+             bool useGPU, int repeats, bool verbose)
+{
+
+  //////////////////////////////
   // read toy data from csv file
+  //////////////////////////////
   std::cout << "Start to load input points" << std::endl;
   std::vector<float> x;
   std::vector<float> y;
@@ -37,13 +78,15 @@ void mainRun(std::string inputFileName, std::string outputFileName, float dc, fl
   }
   std::cout << "Finished loading input points" << std::endl;
 
+  //////////////////////////////
   // run CLUE algorithm
-
+  //////////////////////////////
   std::cout << "Start to run CLUE algorithm" << std::endl;
 
-  CLUEAlgoOneAPI clueAlgo(dc, rhoc, outlierDeltaFactor, verbose);
+  CLUEAlgoSYCL clueAlgo(dc, rhoc, outlierDeltaFactor, verbose);
   for (int r = 0; r < repeats; r++)
   {
+    std::cout << "Run " << r << '\n';
     clueAlgo.setPoints(x.size(), &x[0], &y[0], &layer[0], &weight[0]);
     // measure excution time of makeClusters
     auto start = std::chrono::high_resolution_clock::now();
@@ -56,14 +99,16 @@ void mainRun(std::string inputFileName, std::string outputFileName, float dc, fl
   // output result to outputFileName. -1 means all points.
   if (verbose)
     clueAlgo.verboseResults(outputFileName, -1);
-
   std::cout << "Finished running CLUE algorithm" << std::endl;
-} // end of testRun()
+  // end of testRun()
+}
 
 int main(int argc, char *argv[])
 {
-  // MARK -- set algorithm parameters
 
+  //////////////////////////////
+  // MARK -- set algorithm parameters
+  //////////////////////////////
   float dc = 20.f, rhoc = 80.f, outlierDeltaFactor = 2.f;
   bool useGPU = false;
   int totalNumberOfEvent = 10;
@@ -71,6 +116,7 @@ int main(int argc, char *argv[])
 
   int TBBNumberOfThread = 1;
 
+  std::string inputFileName = argv[1];
   if (argc == 8 || argc == 9)
   {
     dc = std::stof(argv[2]);
@@ -95,37 +141,20 @@ int main(int argc, char *argv[])
     return 1;
   }
 
-#ifdef FOR_TBB
-  if (verbose)
-  {
-    std::cout << "Setting up " << TBBNumberOfThread << " TBB Threads" << std::endl;
-  }
-  tbb::task_scheduler_init init(TBBNumberOfThread);
-#endif
-
+  //////////////////////////////
   // MARK -- set input and output files
-
-  std::string underscore = "_", suffix = ".csv";
-
-  std::string inputFileName = "data/input/";
-  inputFileName.append(argv[1]);
-  inputFileName.append(suffix);
+  //////////////////////////////
   std::cout << "Input file: " << inputFileName << std::endl;
 
-  std::string outputFileName = "data/output/";
-  outputFileName.append(argv[1]);
-  outputFileName.append(underscore);
-  outputFileName.append(std::to_string(int(dc)));
-  outputFileName.append(underscore);
-  outputFileName.append(std::to_string(int(rhoc)));
-  outputFileName.append(underscore);
-  outputFileName.append(std::to_string(int(outlierDeltaFactor)));
-  outputFileName.append(suffix);
+  std::string outputFileName = create_outputfileName(inputFileName, dc, rhoc, outlierDeltaFactor, useGPU);
   std::cout << "Output file: " << outputFileName << std::endl;
 
+  //////////////////////////////
   // MARK -- test run
-
-  mainRun(inputFileName, outputFileName, dc, rhoc, outlierDeltaFactor, useGPU, totalNumberOfEvent, verbose);
+  //////////////////////////////
+  mainRun(inputFileName, outputFileName,
+          dc, rhoc, outlierDeltaFactor,
+          useGPU, totalNumberOfEvent, verbose);
 
   return 0;
 }
