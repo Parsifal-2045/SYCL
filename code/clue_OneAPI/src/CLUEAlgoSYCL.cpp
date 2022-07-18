@@ -202,7 +202,7 @@ void CLUEAlgoSYCL::makeClusters()
     {
       kernel_compute_histogram(d_hist_kernel, d_points_kernel, num_points_kernel, item);
     });
-  }).wait();
+  });
 
   queue_.submit([&](sycl::handler &cgh)
   {
@@ -214,7 +214,7 @@ void CLUEAlgoSYCL::makeClusters()
     {
       kernel_calculate_density(d_hist_kernel, d_points_kernel, dc_kernel, num_points_kernel, item);
     });
-  }).wait();
+  });
 
   queue_.submit([&](sycl::handler &cgh)
   {
@@ -227,7 +227,7 @@ void CLUEAlgoSYCL::makeClusters()
     {
       kernel_calculate_distanceToHigher(d_hist_kernel, d_points_kernel, outlierDeltaFactor_kernel, dc_kernel, num_points_kernel, item);
     });
-  }).wait();
+  });
 
   queue_.submit([&](sycl::handler &cgh)
   {
@@ -242,7 +242,7 @@ void CLUEAlgoSYCL::makeClusters()
     {
       kernel_find_clusters(d_seeds_kernel, d_followers_kernel, d_points_kernel, outlierDeltaFactor_kernel, dc_kernel, rhoc_kernel, num_points_kernel, item);
     });
-  }).wait();
+  });
 
   // assign clusters
   // 1 point per seeds
@@ -258,7 +258,7 @@ void CLUEAlgoSYCL::makeClusters()
     {
       kernel_assign_clusters(d_seeds_kernel, d_followers_kernel, d_points_kernel, num_points_kernel, item);
     });
-  }).wait();
+  });
 
   copy_tohost();
 }

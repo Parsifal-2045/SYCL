@@ -34,7 +34,7 @@ private:
   LayerTilesSYCL *d_hist;
   sycltools::VecArray<int, maxNSeeds> *d_seeds;
   sycltools::VecArray<int, maxNFollowers> *d_followers;
-  sycl::queue queue_ = sycl::queue{Intel_gpu_selector{}};
+  sycl::queue queue_ = sycl::queue(sycl::default_selector{}, sycl::property::queue::in_order());
 
   // private methods
   void init_device()
