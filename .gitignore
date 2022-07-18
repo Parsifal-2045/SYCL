@@ -30,6 +30,8 @@
 *.exe
 *.out
 *.app
-code/.vscode/c_cpp_properties.json
-.vscode/c_cpp_properties.json
 code/clue_OneAPI/mainSYCL
+
+#VSCode properties
+code/.vscode/*.json
+.vscode/*.json
