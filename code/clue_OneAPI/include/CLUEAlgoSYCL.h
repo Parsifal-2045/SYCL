@@ -34,11 +34,25 @@ private:
   LayerTilesSYCL *d_hist;
   sycltools::VecArray<int, maxNSeeds> *d_seeds;
   sycltools::VecArray<int, maxNFollowers> *d_followers;
-  sycl::queue queue_ = sycl::queue(sycl::default_selector{}, sycl::property::queue::in_order());
+  sycl::queue queue_;
 
   // private methods
   void init_device()
   {
+    try
+    {
+      queue_ = sycl::queue(sycl::gpu_selector{}, sycl::property::queue::in_order());
+    }
+    catch(sycl::exception const& e)
+    {
+      std::cout << "No GPU found" << '\n';
+      std::cout << e.what() << '\n';
+      std::cout << "Falling back on CPU" << '\n';
+      queue_ = sycl::queue(sycl::cpu_selector{}, sycl::property::queue::in_order());
+    }
+    std::cout << "Using device: " << queue_.get_device().get_info<sycl::info::device::name>() << '\n';
+    std::cout << "With backend: " << queue_.get_device().get_backend() << '\n';
+    
     unsigned int reserve = 1000000;
     // input variables
     d_points.x = sycl::malloc_device<float>(reserve, queue_);
