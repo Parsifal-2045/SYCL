@@ -135,10 +135,10 @@ mainCuplaCUDA:mainCuplaCUDA.o CLUEAlgo.gpu.o
 CLUEAlgoSYCL.o: src/CLUEAlgoSYCL.cpp include/CLUEAlgoSYCL.h
 	$(EXEC) $(DPCPP) $(SYCL_ACC) $(SYCLINCLUDES) $(SYCL_TARGETS) -o $@ -c $<
 
-CLUEAlgo.o:src/CLUEAlgo.cc include/CLUEAlgo.h
-	$(EXEC) $(HOST_COMPILER) $(INCLUDES) $(SYCL_CCFLAGS) -o $@ -c $<
+CLUEAlgoSerial.o:src/CLUEAlgo.cc include/CLUEAlgo.h
+	$(EXEC) $(HOST_COMPILER) $(INCLUDES) -o $@ -c $<
 
-mainSYCL: src/main.cc CLUEAlgoSYCL.o CLUEAlgo.o
+mainSYCL: src/main.cc CLUEAlgoSYCL.o CLUEAlgoSerial.o
 	$(EXEC) $(DPCPP) $(SYCL_ACC) $(SYCLINCLUDES) $(SYCL_TARGETS) $(SYCL_AOT_GPU) -o $@ $^
 
 run: build
