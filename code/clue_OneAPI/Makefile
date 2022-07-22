@@ -3,6 +3,9 @@ COMPUTER_NAME := $(shell uname -n)
 # Location of the CUDA Toolkit
 CUDA_PATH ?= /usr/local/cuda-10.2
 
+#Location of the SYCL Toolkit
+SYCL_PATH ?= /opt/intel/oneapi
+
 # architecture
 HOST_ARCH   := $(shell uname -m)
 TARGET_ARCH ?= $(HOST_ARCH)
@@ -11,7 +14,6 @@ TARGET_ARCH ?= $(HOST_ARCH)
 # operating system
 HOST_COMPILER ?= g++
 NVCC          := $(CUDA_PATH)/bin/nvcc -ccbin $(HOST_COMPILER)
-DPCPP := dpcpp
 
 # internal flags
 TARGET_SIZE := 64
@@ -30,12 +32,19 @@ NVCCFLAGS += $(addprefix -Xcompiler ,$(CCFLAGS))
 ALL_LDFLAGS :=
 NVCC_LDFLAGS += $(addprefix -Xlinker ,$(LDFLAGS))
 
-# Common includes and paths for CUDA and SYCL
+# Common includes and paths for CUDA
 INCLUDES   := -I include -I cupla/include -I cupla/alpaka/include
-SYCLINCLUDES := -I include -I /opt/intel/oneapi/compiler/2022.0.2/linux/include/sycl
+SYCLINCLUDES := -I include -I /opt/intel/oneapi/compiler/latest/linux/include/sycl
 LIBRARIES  :=
 CUDA_FLAGS := -x cu
-SYCL_CCFLAGS := -std=c++20 #-Wall -Wextra
+
+# SYCL version
+DPCPP := $(SYCL_PATH)/compiler/latest/linux/bin/dpcpp
+DPCPP_BASE := $(SYCL_PATH)/compiler/2022.0.1-prerelase
+$(info >>> DPCPP_BASE=$(DPCPP_BASE))
+SYCL_ACC := -DUSE_SYCL
+SYCL_TARGETS := -fsycl-targets=spir64_x86_64,spir64_gen # Target architectures CPU x86, Intel GPUs
+SYCL_AOT_GPU := -Xsycl-target-backend=spir64_gen "-device 0x020a" # target device Olice GPU  
 
 CUPLA_CPUTBB_ACC := -DFOR_TBB -I /usr/include/tbb -L /usr/lib/x86_64-linux-gnu -ltbb 
 ifeq ($(COMPUTER_NAME), patatrack02.cern.ch)
@@ -80,6 +89,11 @@ all: build
 # mainCuplaCUDA: this will build the native C++ implementation of CLUE and its
 #       corresponding CUDA one built using CUPLA. Which one to use must be
 #       selected at runtime via a flag.
+#
+# mainSYCL: this will build the native C++ implementation of CLUE and its 
+#		corresponding SYCL one. The SYCL implementation will default to run on 
+#		GPU but will fall back on CPU if there is no compatible GPU available.
+#		Which version to use must be selected at runtime via a flag (useGPU).
 
 build: main mainCuplaCPUTBB mainCuplaCUDA mainSYCL
 
@@ -117,20 +131,18 @@ mainCuplaCUDA.o:src/main.cc include/CLUEAlgoCupla.h include/GPUVecArrayCupla.h
 mainCuplaCUDA:mainCuplaCUDA.o CLUEAlgo.gpu.o
 	$(EXEC) $(NVCC) $(INCLUDES) $(NVCCFLAGS) $(CUPLA_CUDA_ACC) $(GENCODE_FLAGS) $(CUPLA_FLAGS) -o $@ $^
 
-#OneAPI
-CLUEAlgoSYCL.o:src/CLUEAlgoSYCL.cpp include/CLUEAlgoSYCL.h
-	$(EXEC) $(DPCPP) $(SYCLINCLUDES) $(SYCL_CCFLAGS) -g -o $@ -c $<
+# Native C++ implementation bundled with SYCL
+CLUEAlgoSYCL.o: src/CLUEAlgoSYCL.cpp include/CLUEAlgoSYCL.h
+	$(EXEC) $(DPCPP) $(SYCL_ACC) $(SYCLINCLUDES) $(SYCL_TARGETS) -o $@ -c $<
 
-mainSYCL.o:src/main.cc include/CLUEAlgoSYCL.h include/SYCLVecArray.h
-	$(EXEC) $(DPCPP) $(SYCLINCLUDES) $(SYCL_CCFLAGS) -g -o $@ -c $<
+CLUEAlgo.o:src/CLUEAlgo.cc include/CLUEAlgo.h
+	$(EXEC) $(HOST_COMPILER) $(INCLUDES) $(SYCL_CCFLAGS) -o $@ -c $<
 
-mainSYCL: mainSYCL.o CLUEAlgoSYCL.o
-	$(EXEC) $(DPCPP) -o $@ $^
+mainSYCL: src/main.cc CLUEAlgoSYCL.o CLUEAlgo.o
+	$(EXEC) $(DPCPP) $(SYCL_ACC) $(SYCLINCLUDES) $(SYCL_TARGETS) $(SYCL_AOT_GPU) -o $@ $^
 
 run: build
 	$(EXEC) main
 
 clean:
 	rm -f main mainCuplaCPUTBB mainCuplaCUDA mainSYCL *.o
-
-clobber: clean

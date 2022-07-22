@@ -5,7 +5,6 @@
 #include "CLUEAlgo.h"
 #include "LayerTilesSYCL.h"
 #include "PointsPtr.h"
-#include "Intel_gpu_selector.h"
 
 class CLUEAlgoSYCL : public CLUEAlgo
 {
