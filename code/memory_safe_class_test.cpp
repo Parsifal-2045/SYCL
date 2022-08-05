@@ -2,53 +2,72 @@
 #include <iostream>
 #include <optional>
 
+template <typename T>
+std::ostream &operator<<(std::ostream &os, std::vector<T> const &v)
+{
+    os << '(';
+    for (int i = 0; i != v.size() - 1; i++)
+    {
+        os << v[i] << ", ";
+    }
+    os << v[v.size() - 1] << ')';
+    return os;
+}
+
+class DeviceDeleter
+{
+public:
+    DeviceDeleter() = default;
+    DeviceDeleter(sycl::queue stream) : stream_{stream} {}
+
+    void operator()(void *ptr)
+    {
+        if (stream_)
+        {
+            sycl::free(ptr, *stream_);
+            std::cout << "Freed device memory\n";
+        }
+    }
+
+private:
+    std::optional<sycl::queue> stream_;
+};
+
+template <typename T>
+typename std::unique_ptr<T, DeviceDeleter> make_device_unique(size_t n, sycl::queue stream)
+{
+    void *mem = sycl::malloc_device(n * sizeof(T), stream);
+    return std::unique_ptr<T, DeviceDeleter>{reinterpret_cast<T *>(mem), DeviceDeleter{stream}};
+}
+
+
 class Test
 {
 public:
     Test() = default;
 
-    ~Test()
-    {
-        sycl::free(a, q_);
-        sycl::free(b, q_);
-    }
+    ~Test() {};
 
-    sycl::queue GetQueue()
-    {
-        return q_;
-    }
+    std::unique_ptr<int, DeviceDeleter> a;
+    std::unique_ptr<int, DeviceDeleter> b;
 
-    void SetQueue(sycl::queue queue)
-    {
-        q_ = queue;
-    }
-
-    int *a = nullptr;
-    int *b = nullptr;
-
-private:
-    sycl::queue q_;
 };
 
 int main()
 {
     int n = 10;
-    sycl::queue queue = sycl::queue{sycl::cpu_selector{}, sycl::property::queue::in_order()};
+    sycl::queue queue = sycl::queue{sycl::gpu_selector{}, sycl::property::queue::in_order()};
     Test test;
-    std::cout << "Inner queue (before setting): " << test.GetQueue().get_device().get_info<sycl::info::device::name>() << '\n';
-    std::cout << "Outer queue : " << queue.get_device().get_info<sycl::info::device::name>() << '\n';
-    test.SetQueue(queue);
-    std::cout << "Inner queue: " << test.GetQueue().get_device().get_info<sycl::info::device::name>() << '\n';
     std::vector<int> vec(n, 1);
-    test.a = sycl::malloc_device<int>(n, queue);
-    test.b = sycl::malloc_device<int>(n, queue);
-    queue.memcpy(test.a, vec.data(), n * sizeof(int));
-    queue.memcpy(test.b, vec.data(), n * sizeof(int));
+    test.a = make_device_unique<int>(n, queue);
+    test.b = make_device_unique<int>(n, queue);
+    queue.memcpy(test.a.get(), vec.data(), n * sizeof(int));
+    queue.memcpy(test.b.get(), vec.data(), n * sizeof(int)).wait();
     
     queue.submit([&](sycl::handler& h)
     {
-        auto a = test.a;
-        auto b = test.b;
+        auto a = test.a.get();
+        auto b = test.b.get();
         h.parallel_for(sycl::range<1>(n), [=](sycl::id<1> i)
         {
             a[i] = 2;
@@ -59,17 +78,9 @@ int main()
     std::vector<int> a(n);
     std::vector<int> b(n);
 
-    queue.memcpy(a.data(), test.a, n * sizeof(int));
-    queue.memcpy(b.data(), test.b, n * sizeof(int)).wait();
+    queue.memcpy(a.data(), test.a.get(), n * sizeof(int));
+    queue.memcpy(b.data(), test.b.get(), n * sizeof(int)).wait();
 
-    for (int i = 0; i != n; i++)
-    {
-        std::cout << a[i] << ", ";
-    }
-    std::cout << '\n';
-    for (int i = 0; i != n; i++)
-    {
-        std::cout << b[i] << ", ";
-    }
-    std::cout << '\n';
+    std::cout << a << '\n';
+    std::cout << b << '\n';
 }
