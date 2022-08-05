@@ -3,6 +3,7 @@
 
 // https://codeplay.com/portal/blogs/2019/09/24/alternatives-to-cpp-function-pointers-in-sycl-using-function-objects.html
 // Doesn't compile with dpcpp: SYCL kernel cannot call through a function pointer
+// Possible with a DPC++ flag https://www.intel.com/content/www/us/en/develop/documentation/oneapi-dpcpp-cpp-compiler-dev-guide-and-reference/top/compiler-reference/compiler-options/offload-openmp-and-parallel-processing-options/fsycl-enable-function-pointers.html
 template <typename T>
 auto add(T left, T right) -> T { return left + right; }
 template <typename T>
