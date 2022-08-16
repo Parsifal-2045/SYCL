@@ -57,7 +57,6 @@ void mainRun(std::string inputFileName, std::string outputFileName,
              float dc, float rhoc, float outlierDeltaFactor,
              bool useGPU, int repeats, bool verbose)
 {
-
     //////////////////////////////
     // read toy data from csv file
     //////////////////////////////
@@ -103,12 +102,12 @@ void mainRun(std::string inputFileName, std::string outputFileName,
         {
             clueAlgo.setPoints(x.size(), &x[0], &y[0], &layer[0], &weight[0]);
             // measure excution time of makeClusters
-            auto start = std::chrono::high_resolution_clock::now();
+            // auto start = std::chrono::high_resolution_clock::now();
             clueAlgo.makeClusters();
-            auto finish = std::chrono::high_resolution_clock::now();
-            std::chrono::duration<double> elapsed = finish - start;
-            std::cout << "Iteration " << r;
-            std::cout << " | Elapsed time: " << elapsed.count() * 1000 << " ms\n";
+            // auto finish = std::chrono::high_resolution_clock::now();
+            // std::chrono::duration<double> elapsed = finish - start;
+            // std::cout << "Iteration " << r;
+            // std::cout << " | Elapsed time: " << elapsed.count() * 1000 << " ms\n";
         }
 
         // output result to outputFileName. -1 means all points.
@@ -120,11 +119,11 @@ void mainRun(std::string inputFileName, std::string outputFileName,
         {
             clueAlgo.setPoints(x.size(), &x[0], &y[0], &layer[0], &weight[0]);
             // measure execution time of makeClusters
-            auto start = std::chrono::high_resolution_clock::now();
+            //auto start = std::chrono::high_resolution_clock::now();
             clueAlgo.makeClusters();
-            auto finish = std::chrono::high_resolution_clock::now();
-            std::chrono::duration<double> elapsed = finish - start;
-            std::cout << "Elapsed time: " << elapsed.count() * 1000 << "ms\n";
+            //auto finish = std::chrono::high_resolution_clock::now();
+            //std::chrono::duration<double> elapsed = finish - start;
+            //std::cout << "Elapsed time: " << elapsed.count() * 1000 << "ms\n";
         }
         // output results to outputFileName. -1 means all points.
         if (verbose)
@@ -233,9 +232,16 @@ int main(int argc, char *argv[])
     //////////////////////////////
     // MARK -- test run
     //////////////////////////////
+    auto start = std::chrono::high_resolution_clock::now();
     mainRun(inputFileName, outputFileName,
             dc, rhoc, outlierDeltaFactor,
             useGPU, totalNumberOfEvent, verbose);
+    auto end = std::chrono::high_resolution_clock::now();
+    std::chrono::duration<double> elapsed = end - start;
+    auto time = static_cast<double>(std::chrono::duration_cast<std::chrono::microseconds>(elapsed).count()) / 1e6;
+
+    std::cout << "Processed " << totalNumberOfEvent << " events in " << std::scientific << time << " seconds, throughput "
+              << std::defaultfloat << totalNumberOfEvent / time << " events/s" << std::endl;
 
     return 0;
 }
