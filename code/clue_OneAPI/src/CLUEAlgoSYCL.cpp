@@ -10,7 +10,7 @@
 #include <ctime>
 // user include
 
-void kernel_compute_histogram(LayerTilesSYCL *d_hist, const PointsPtr d_points, int numberOfPoints, sycl::nd_item<3> item)
+void kernel_compute_histogram(LayerTilesSYCL *d_hist, const PointsPtr d_points, int numberOfPoints, sycl::nd_item<1> item)
 {
   int i = item.get_group(0) * item.get_local_range().get(0) + item.get_local_id(0);
   if (i < numberOfPoints)
@@ -20,7 +20,7 @@ void kernel_compute_histogram(LayerTilesSYCL *d_hist, const PointsPtr d_points, 
   }
 }
 
-void kernel_calculate_density(LayerTilesSYCL *d_hist, PointsPtr d_points, float dc, int numberOfPoints, sycl::nd_item<3> item)
+void kernel_calculate_density(LayerTilesSYCL *d_hist, PointsPtr d_points, float dc, int numberOfPoints, sycl::nd_item<1> item)
 {
   int i = item.get_group(0) * item.get_local_range().get(0) + item.get_local_id(0);
   if (i < numberOfPoints)
@@ -58,7 +58,7 @@ void kernel_calculate_density(LayerTilesSYCL *d_hist, PointsPtr d_points, float 
   }
 }
 
-void kernel_calculate_distanceToHigher(LayerTilesSYCL *d_hist, PointsPtr d_points, float outlierDeltaFactor, float dc, int numberOfPoints, sycl::nd_item<3> item)
+void kernel_calculate_distanceToHigher(LayerTilesSYCL *d_hist, PointsPtr d_points, float outlierDeltaFactor, float dc, int numberOfPoints, sycl::nd_item<1> item)
 {
   int i = item.get_group(0) * item.get_local_range().get(0) + item.get_local_id(0);
   float dm = outlierDeltaFactor * dc;
@@ -111,7 +111,7 @@ void kernel_calculate_distanceToHigher(LayerTilesSYCL *d_hist, PointsPtr d_point
   }
 }
 
-void kernel_find_clusters(sycltools::VecArray<int, maxNSeeds> *d_seeds, sycltools::VecArray<int, maxNFollowers> *d_followers, PointsPtr d_points, float outlierDeltaFactor, float dc, float rhoc, int numberOfPoints, sycl::nd_item<3> item)
+void kernel_find_clusters(sycltools::VecArray<int, maxNSeeds> *d_seeds, sycltools::VecArray<int, maxNFollowers> *d_followers, PointsPtr d_points, float outlierDeltaFactor, float dc, float rhoc, int numberOfPoints, sycl::nd_item<1> item)
 {
   int i = item.get_group(0) * item.get_local_range().get(0) + item.get_local_id(0); 
   if (i < numberOfPoints)
@@ -142,7 +142,7 @@ void kernel_find_clusters(sycltools::VecArray<int, maxNSeeds> *d_seeds, sycltool
   }
 }
 
-void kernel_assign_clusters(const sycltools::VecArray<int, maxNSeeds> *d_seeds, const sycltools::VecArray<int, maxNFollowers> *d_followers, PointsPtr d_points, int numberOfPoints, sycl::nd_item<3> item)
+void kernel_assign_clusters(const sycltools::VecArray<int, maxNSeeds> *d_seeds, const sycltools::VecArray<int, maxNFollowers> *d_followers, PointsPtr d_points, int numberOfPoints, sycl::nd_item<1> item)
 {
   int idxCls = item.get_group(0) * item.get_local_range().get(0) + item.get_local_id(0);
   const auto &seeds = d_seeds[0];
@@ -189,8 +189,8 @@ void CLUEAlgoSYCL::makeClusters()
   // calculate rho, delta and find seeds
   // 1 point per thread
   const int numThreadsPerBlock = 256; // ThreadsPerBlock = work-group size
-  const sycl::range<3> blockSize(numThreadsPerBlock, 1, 1);
-  const sycl::range<3> gridSize(ceil(points_.n / static_cast<float>(blockSize[0])), 1, 1);
+  const sycl::range<1> blockSize(numThreadsPerBlock);
+  const sycl::range<1> gridSize(ceil(points_.n / static_cast<float>(blockSize[0])));
 
   queue_.submit([&](sycl::handler &cgh)
   {
@@ -198,7 +198,7 @@ void CLUEAlgoSYCL::makeClusters()
     auto d_hist_kernel = d_hist;
     auto d_points_kernel = d_points;
     auto num_points_kernel = points_.n;
-    cgh.parallel_for(sycl::nd_range<3>(gridSize * blockSize, blockSize), [=](sycl::nd_item<3> item)
+    cgh.parallel_for(sycl::nd_range<1>(gridSize * blockSize, blockSize), [=](sycl::nd_item<1> item)
     {
       kernel_compute_histogram(d_hist_kernel, d_points_kernel, num_points_kernel, item);
     });
@@ -210,7 +210,7 @@ void CLUEAlgoSYCL::makeClusters()
     auto d_points_kernel = d_points;
     auto dc_kernel = dc_;
     auto num_points_kernel = points_.n;
-    cgh.parallel_for(sycl::nd_range<3>(gridSize * blockSize, blockSize), [=](sycl::nd_item<3> item)
+    cgh.parallel_for(sycl::nd_range<1>(gridSize * blockSize, blockSize), [=](sycl::nd_item<1> item)
     {
       kernel_calculate_density(d_hist_kernel, d_points_kernel, dc_kernel, num_points_kernel, item);
     });
@@ -223,7 +223,7 @@ void CLUEAlgoSYCL::makeClusters()
     auto outlierDeltaFactor_kernel = outlierDeltaFactor_;
     auto dc_kernel = dc_;
     auto num_points_kernel = points_.n;
-    cgh.parallel_for(sycl::nd_range<3>(gridSize * blockSize, blockSize), [=](sycl::nd_item<3> item)
+    cgh.parallel_for(sycl::nd_range<1>(gridSize * blockSize, blockSize), [=](sycl::nd_item<1> item)
     {
       kernel_calculate_distanceToHigher(d_hist_kernel, d_points_kernel, outlierDeltaFactor_kernel, dc_kernel, num_points_kernel, item);
     });
@@ -238,7 +238,7 @@ void CLUEAlgoSYCL::makeClusters()
     auto dc_kernel = dc_;
     auto rhoc_kernel = rhoc_;
     auto num_points_kernel = points_.n;
-    cgh.parallel_for(sycl::nd_range<3>(gridSize * blockSize, blockSize), [=](sycl::nd_item<3> item)
+    cgh.parallel_for(sycl::nd_range<1>(gridSize * blockSize, blockSize), [=](sycl::nd_item<1> item)
     {
       kernel_find_clusters(d_seeds_kernel, d_followers_kernel, d_points_kernel, outlierDeltaFactor_kernel, dc_kernel, rhoc_kernel, num_points_kernel, item);
     });
@@ -246,7 +246,7 @@ void CLUEAlgoSYCL::makeClusters()
 
   // assign clusters
   // 1 point per seeds
-  const sycl::range<3> gridSize_nseeds(ceil(maxNSeeds / static_cast<double>(blockSize[0])), 1, 1);
+  const sycl::range<1> gridSize_nseeds(ceil(maxNSeeds / static_cast<double>(blockSize[0])));
 
   queue_.submit([&](sycl::handler &cgh)
   {
@@ -254,7 +254,7 @@ void CLUEAlgoSYCL::makeClusters()
     auto d_followers_kernel = d_followers;
     auto d_points_kernel = d_points;
     auto num_points_kernel = points_.n;
-    cgh.parallel_for(sycl::nd_range<3>(gridSize_nseeds * blockSize, blockSize), [=](sycl::nd_item<3> item)
+    cgh.parallel_for(sycl::nd_range<1>(gridSize_nseeds * blockSize, blockSize), [=](sycl::nd_item<1> item)
     {
       kernel_assign_clusters(d_seeds_kernel, d_followers_kernel, d_points_kernel, num_points_kernel, item);
     });
