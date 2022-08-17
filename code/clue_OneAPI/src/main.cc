@@ -96,34 +96,49 @@ void mainRun(std::string inputFileName, std::string outputFileName,
 #ifndef USE_CUPLA
 #ifndef USE_SYCL
         std::cout << "Using CLUEAlgoGPU: " << std::endl;
+        // auto begin_constr = std::chrono::high_resolution_clock::now();
         CLUEAlgoGPU clueAlgo(dc, rhoc, outlierDeltaFactor,
                              verbose);
+        // auto end_constr = std::chrono::high_resolution_clock::now();
+        // std::chrono::duration<double> elapsed_constr = end_constr - begin_constr;
+        // std::cout << "Construction time: " << elapsed_constr.count() * 1000 << "ms\n";
         for (unsigned r = 0; r < repeats; r++)
         {
+            // std::cout << "Iteration " << r << ":" <<'\n';
+            // auto begin_set = std::chrono::high_resolution_clock::now();
             clueAlgo.setPoints(x.size(), &x[0], &y[0], &layer[0], &weight[0]);
-            // measure excution time of makeClusters
-            // auto start = std::chrono::high_resolution_clock::now();
+            // auto end_set = std::chrono::high_resolution_clock::now();
+            // std::chrono::duration<double> elapsed_set = end_set - begin_set;
+            // std::cout << "Set: " << elapsed_set.count() * 1000 << "ms\n";
+            // auto begin_cluster = std::chrono::high_resolution_clock::now();
             clueAlgo.makeClusters();
-            // auto finish = std::chrono::high_resolution_clock::now();
-            // std::chrono::duration<double> elapsed = finish - start;
-            // std::cout << "Iteration " << r;
-            // std::cout << " | Elapsed time: " << elapsed.count() * 1000 << " ms\n";
+            // auto end_cluster = std::chrono::high_resolution_clock::now();
+            // std::chrono::duration<double> elapsed_cluster = end_cluster - begin_cluster;
+            // std::cout << "Make clusters: " << elapsed_cluster.count() * 1000 << "ms\n";
         }
 
         // output result to outputFileName. -1 means all points.
         clueAlgo.verboseResults(outputFileName, -1);
 #else
         std::cout << "Using CLUEAlgoSYCL: " << std::endl;
+        // auto begin_constr = std::chrono::high_resolution_clock::now();
         CLUEAlgoSYCL clueAlgo(dc, rhoc, outlierDeltaFactor, verbose);
+        // auto end_constr = std::chrono::high_resolution_clock::now();
+        // std::chrono::duration<double> elapsed_constr = end_constr - begin_constr;
+        // std::cout << "Construction time: " << elapsed_constr.count() * 1000 << "ms\n";
         for (int r = 0; r < repeats; r++)
         {
+            // std::cout << "Iteration " << r << ":" <<'\n';
+            // auto begin_set = std::chrono::high_resolution_clock::now();
             clueAlgo.setPoints(x.size(), &x[0], &y[0], &layer[0], &weight[0]);
-            // measure execution time of makeClusters
-            //auto start = std::chrono::high_resolution_clock::now();
+            // auto end_set = std::chrono::high_resolution_clock::now();
+            // std::chrono::duration<double> elapsed_set = end_set - begin_set;
+            // std::cout << "Set: " << elapsed_set.count() * 1000 << "ms\n";
+            // auto begin_cluster = std::chrono::high_resolution_clock::now();
             clueAlgo.makeClusters();
-            //auto finish = std::chrono::high_resolution_clock::now();
-            //std::chrono::duration<double> elapsed = finish - start;
-            //std::cout << "Elapsed time: " << elapsed.count() * 1000 << "ms\n";
+            // auto end_cluster = std::chrono::high_resolution_clock::now();
+            // std::chrono::duration<double> elapsed_cluster = end_cluster - begin_cluster;
+            // std::cout << "Make clusters: " << elapsed_cluster.count() * 1000 << "ms\n";
         }
         // output results to outputFileName. -1 means all points.
         if (verbose)
@@ -239,7 +254,6 @@ int main(int argc, char *argv[])
     auto end = std::chrono::high_resolution_clock::now();
     std::chrono::duration<double> elapsed = end - start;
     auto time = static_cast<double>(std::chrono::duration_cast<std::chrono::microseconds>(elapsed).count()) / 1e6;
-
     std::cout << "Processed " << totalNumberOfEvent << " events in " << std::scientific << time << " seconds, throughput "
               << std::defaultfloat << totalNumberOfEvent / time << " events/s" << std::endl;
 
