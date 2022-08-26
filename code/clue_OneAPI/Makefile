@@ -1,7 +1,7 @@
 COMPUTER_NAME := $(shell uname -n)
 
 # Location of the CUDA Toolkit
-CUDA_PATH ?= /usr/local/cuda-10.2
+CUDA_PATH ?= /usr/local/cuda-11.6
 
 #Location of the SYCL Toolkit
 SYCL_PATH ?= /opt/intel/oneapi
@@ -17,9 +17,9 @@ NVCC          := $(CUDA_PATH)/bin/nvcc -ccbin $(HOST_COMPILER)
 
 # internal flags
 TARGET_SIZE := 64
-NVCCFLAGS   := -m${TARGET_SIZE}
-CCFLAGS     := -std=c++14 
-LDFLAGS     :=
+NVCCFLAGS   := -m${TARGET_SIZE} -O2
+CCFLAGS     := -std=c++14 -O2
+LDFLAGS     := 
 
 # Debug build flags
 ifeq ($(dbg),1)
@@ -58,7 +58,7 @@ CUPLA_CUDA_ACC := -DFOR_CUDA -DALPAKA_ACC_GPU_CUDA_ENABLED=1
 ################################################################################
 
 # Gencode arguments
-SMS ?= 60 70 75
+SMS ?= 60 70 75 80
 
 ifeq ($(SMS),)
 $(info >>> WARNING - no SM architectures have been specified - waiving sample <<<)
