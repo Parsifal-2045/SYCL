@@ -12,9 +12,9 @@ class CLUEAlgoSYCL : public CLUEAlgo
 
 public:
   // constructor
-  CLUEAlgoSYCL(float dc, float rhoc, float outlierDeltaFactor, bool verbose) : CLUEAlgo(dc, rhoc, outlierDeltaFactor, verbose)
+  CLUEAlgoSYCL(float dc, float rhoc, float outlierDeltaFactor, bool verbose, int useGPU) : CLUEAlgo(dc, rhoc, outlierDeltaFactor, verbose)
   {
-    init_device();
+    init_device(useGPU);
   }
   // destructor
   ~CLUEAlgoSYCL()
@@ -27,7 +27,6 @@ public:
 
 private:
   // private variables
-
   // algorithm internal variables
   PointsPtr d_points;
   LayerTilesSYCL *d_hist;
@@ -36,20 +35,23 @@ private:
   sycl::queue queue_;
 
   // private methods
-  void init_device()
+  void init_device(int useGPU)
   {
     try
     {
-      queue_ = sycl::queue(sycl::gpu_selector{}, sycl::property::queue::in_order());
+      if (useGPU)
+        queue_ = sycl::queue(sycl::gpu_selector{}, sycl::property::queue::in_order());
+      else
+        queue_ = sycl::queue(sycl::cpu_selector{}, sycl::property::queue::in_order());
     }
     catch(sycl::exception const& e)
     {
-      std::cout << "No GPU found" << '\n';
-      std::cout << e.what() << '\n';
-      std::cout << "Falling back on CPU" << '\n';
+      // std::cout << "No GPU found" << '\n';
+      // std::cout << e.what() << '\n';
+      // std::cout << "Falling back on CPU" << '\n';
       queue_ = sycl::queue(sycl::cpu_selector{}, sycl::property::queue::in_order());
     }
-    std::cout << "Using device: " << queue_.get_device().get_info<sycl::info::device::name>() << '\n';
+    std::cout << "Using device: " << queue_.get_device().get_info<sycl::info::device::name>() << ' ';
     std::cout << "With backend: " << queue_.get_device().get_backend() << '\n';
     
     unsigned int reserve = 1000000;

@@ -92,7 +92,7 @@ void mainRun(std::string inputFileName, std::string outputFileName,
     //////////////////////////////
 #if defined(USE_SYCL)
     std::cout << "Using CLUEAlgoSYCL: " << std::endl;
-    CLUEAlgoSYCL* clueAlgo = new CLUEAlgoSYCL(dc, rhoc, outlierDeltaFactor, verbose);
+    CLUEAlgoSYCL* clueAlgo = new CLUEAlgoSYCL(dc, rhoc, outlierDeltaFactor, verbose, useGPU);
 #elif defined(USE_CUPLA)
     std::cout << "Using CLUEAlgoCupla: " << std::endl;
     CLUEAlgoCupla<cupla::Acc>* clueAlgo = new CLUEAlgoCupla<cupla::Acc>(dc, rhoc, outlierDeltaFactor, verbose);

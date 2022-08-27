@@ -1,6 +1,11 @@
 DEV_ID=$1
-EXEC=./main
-USE_GPU=0
+# EXEC=./main
+USE_GPU="${2:-1}"
+EXEC="${3:-./main}"
+
+echo "Launch Params"
+echo "- USE_GPU: $USE_GPU"
+echo "- EXEC: $EXEC"
 
 # CUDA_VISIBLE_DEVICES=$DEV_ID $EXEC data/input/toyDetector_1000.csv 20 25 2 $USE_GPU 10 0
 # CUDA_VISIBLE_DEVICES=$DEV_ID $EXEC data/input/toyDetector_2000.csv 20 25 2 $USE_GPU 10 0
