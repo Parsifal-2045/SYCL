@@ -4,7 +4,11 @@ COMPUTER_NAME := $(shell uname -n)
 CUDA_PATH ?= /usr/local/cuda-11.6
 
 #Location of the SYCL Toolkit
+ifndef USE_SYCL_PATATRACK
 SYCL_PATH ?= /opt/intel/oneapi
+else
+SYCL_PATH ?= /data2/user/wredjeb/sycl_workspace
+endif
 
 # architecture
 HOST_ARCH   := $(shell uname -m)
@@ -39,11 +43,19 @@ LIBRARIES  :=
 CUDA_FLAGS := -x cu
 
 # SYCL version
+ifndef USE_SYCL_PATATRACK
 DPCPP := $(SYCL_PATH)/compiler/latest/linux/bin/dpcpp
 DPCPP_BASE := $(SYCL_PATH)/compiler/2022.0.1-prerelase
 SYCL_ACC := -DUSE_SYCL
 SYCL_TARGETS := -fsycl-targets=spir64_x86_64,spir64_gen # Target architectures CPU x86, Intel GPUs
 SYCL_AOT_GPU := -Xsycl-target-backend=spir64_gen "-device xe_hp_sdv" # target GPU architecture (Olice)
+else
+DPCPP := $(SYCL_PATH)/build/bin/clang++
+# DPCPP_BASE := $(SYCL_PATH)/compiler/2022.0.1-prerelase
+SYCL_ACC := -DUSE_SYCL
+SYCL_TARGETS := -fsycl -fsycl-targets=nvptx64-nvidia-cuda -std=c++17 # Target architectures GPU Nvidia
+SYCL_AOT_GPU := 
+endif
 
 CUPLA_CPUTBB_ACC := -DFOR_TBB -I /usr/include/tbb -L /usr/lib/x86_64-linux-gnu -ltbb 
 ifeq ($(COMPUTER_NAME), patatrack02.cern.ch)

@@ -88,106 +88,56 @@ void mainRun(std::string inputFileName, std::string outputFileName,
     std::cout << "Finished loading input points" << std::endl;
 
     //////////////////////////////
-    // run CLUE algorithm
+    // Make correct CLUEAlgo Hardware implementation
     //////////////////////////////
-    std::cout << "Start to run CLUE algorithm" << std::endl;
+#if defined(USE_SYCL)
+    std::cout << "Using CLUEAlgoSYCL: " << std::endl;
+    CLUEAlgoSYCL* clueAlgo = new CLUEAlgoSYCL(dc, rhoc, outlierDeltaFactor, verbose);
+#elif defined(USE_CUPLA)
+    std::cout << "Using CLUEAlgoCupla: " << std::endl;
+    CLUEAlgoCupla<cupla::Acc>* clueAlgo = new CLUEAlgoCupla<cupla::Acc>(dc, rhoc, outlierDeltaFactor, verbose);
+#else
+    CLUEAlgo* clueAlgo;
     if (useGPU)
     {
-#ifndef USE_CUPLA
-#ifndef USE_SYCL
         std::cout << "Using CLUEAlgoGPU: " << std::endl;
-        // auto begin_constr = std::chrono::high_resolution_clock::now();
-        CLUEAlgoGPU clueAlgo(dc, rhoc, outlierDeltaFactor,
-                             verbose);
-        // auto end_constr = std::chrono::high_resolution_clock::now();
-        // std::chrono::duration<double> elapsed_constr = end_constr - begin_constr;
-        // std::cout << "Construction time: " << elapsed_constr.count() * 1000 << "ms\n";
-        for (unsigned r = 0; r < repeats; r++)
-        {
-            // std::cout << "Iteration " << r << ":" <<'\n';
-            // auto begin_set = std::chrono::high_resolution_clock::now();
-            clueAlgo.setPoints(x.size(), &x[0], &y[0], &layer[0], &weight[0]);
-            // auto end_set = std::chrono::high_resolution_clock::now();
-            // std::chrono::duration<double> elapsed_set = end_set - begin_set;
-            // std::cout << "Set: " << elapsed_set.count() * 1000 << "ms\n";
-            // auto begin_cluster = std::chrono::high_resolution_clock::now();
-            clueAlgo.makeClusters();
-            // auto end_cluster = std::chrono::high_resolution_clock::now();
-            // std::chrono::duration<double> elapsed_cluster = end_cluster - begin_cluster;
-            // std::cout << "Make clusters: " << elapsed_cluster.count() * 1000 << "ms\n";
-        }
-
-        // output result to outputFileName. -1 means all points.
-        clueAlgo.verboseResults(outputFileName, -1);
-#else
-        std::cout << "Using CLUEAlgoSYCL: " << std::endl;
-        // auto begin_constr = std::chrono::high_resolution_clock::now();
-        CLUEAlgoSYCL clueAlgo(dc, rhoc, outlierDeltaFactor, verbose);
-        // auto end_constr = std::chrono::high_resolution_clock::now();
-        // std::chrono::duration<double> elapsed_constr = end_constr - begin_constr;
-        // std::cout << "Construction time: " << elapsed_constr.count() * 1000 << "ms\n";
-        for (int r = 0; r < repeats; r++)
-        {
-            // std::cout << "Iteration " << r << ":" <<'\n';
-            // auto begin_set = std::chrono::high_resolution_clock::now();
-            clueAlgo.setPoints(x.size(), &x[0], &y[0], &layer[0], &weight[0]);
-            // auto end_set = std::chrono::high_resolution_clock::now();
-            // std::chrono::duration<double> elapsed_set = end_set - begin_set;
-            // std::cout << "Set: " << elapsed_set.count() * 1000 << "ms\n";
-            // auto begin_cluster = std::chrono::high_resolution_clock::now();
-            clueAlgo.makeClusters();
-            // auto end_cluster = std::chrono::high_resolution_clock::now();
-            // std::chrono::duration<double> elapsed_cluster = end_cluster - begin_cluster;
-            // std::cout << "Make clusters: " << elapsed_cluster.count() * 1000 << "ms\n";
-        }
-        // output results to outputFileName. -1 means all points.
-        if (verbose)
-        {
-            clueAlgo.verboseResults(outputFileName, -1);
-        }
-
-#endif
-#else
-        std::cout << "Using CLUEAlgoCupla: " << std::endl;
-        CLUEAlgoCupla<cupla::Acc> clueAlgo(dc, rhoc, outlierDeltaFactor,
-                                           verbose);
-        for (int r = 0; r < repeats; r++)
-        {
-            clueAlgo.setPoints(x.size(), &x[0], &y[0], &layer[0], &weight[0]);
-            // measure excution time of makeClusters
-            auto start = std::chrono::high_resolution_clock::now();
-            clueAlgo.makeClusters();
-            auto finish = std::chrono::high_resolution_clock::now();
-            std::chrono::duration<double> elapsed = finish - start;
-            std::cout << "Elapsed time: " << elapsed.count() * 1000 << " ms\n";
-        }
-
-        // output result to outputFileName. -1 means all points.
-        if (verbose)
-            clueAlgo.verboseResults(outputFileName, -1);
-#endif
+        clueAlgo = new CLUEAlgoGPU(dc, rhoc, outlierDeltaFactor, verbose);
     }
-    else
-    {
+    else {
         std::cout << "Using CLUEAlgo: " << std::endl;
-        CLUEAlgo clueAlgo(dc, rhoc, outlierDeltaFactor, verbose);
-        for (int r = 0; r < repeats; r++)
-        {
-            clueAlgo.setPoints(x.size(), &x[0], &y[0], &layer[0], &weight[0]);
-            // measure excution time of makeClusters
-            auto start = std::chrono::high_resolution_clock::now();
-            clueAlgo.makeClusters();
-            auto finish = std::chrono::high_resolution_clock::now();
-            std::chrono::duration<double> elapsed = finish - start;
-            std::cout << "Elapsed time: " << elapsed.count() * 1000 << " ms\n";
-        }
+        //todo: can print cpu name by reading and prasing /proc/cpuinfo file
+        // it has to be here to have a program output identical to other implementations to do 
+        // automatic benchmarking measurements gathering
+        std::cout << "0: Using an Intel CPU (TODO: More info)" << std::endl;
+        clueAlgo = new CLUEAlgo(dc, rhoc, outlierDeltaFactor, verbose);
+    }
+#endif
 
-        // output result to outputFileName. -1 means all points.
-        if (verbose)
-            clueAlgo.verboseResults(outputFileName, -1);
+    //////////////////////////////
+    // Run CLUE algorithm
+    //////////////////////////////
+    for (int r = 0; r < repeats; r++)
+    {
+        // std::cout << "Iteration " << r << ":" <<'\n';
+        // auto begin_set = std::chrono::high_resolution_clock::now();
+        clueAlgo->setPoints(x.size(), &x[0], &y[0], &layer[0], &weight[0]);
+        // auto end_set = std::chrono::high_resolution_clock::now();
+        // std::chrono::duration<double> elapsed_set = end_set - begin_set;
+        // std::cout << "Set: " << elapsed_set.count() * 1000 << "ms\n";
+        auto begin_cluster = std::chrono::high_resolution_clock::now();
+        clueAlgo->makeClusters();
+        auto end_cluster = std::chrono::high_resolution_clock::now();
+        std::chrono::duration<double> elapsed_cluster = end_cluster - begin_cluster;
+        std::cout << "Make clusters: " << elapsed_cluster.count() * 1000 << "ms\n";
+    }
+    // output results to outputFileName. -1 means all points.
+    if (verbose)
+    {
+        clueAlgo->verboseResults(outputFileName, -1);
     }
 
     std::cout << "Finished running CLUE algorithm" << std::endl;
+    delete clueAlgo;
 } // end of testRun()
 
 int main(int argc, char *argv[])

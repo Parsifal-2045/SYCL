@@ -4,6 +4,7 @@
 #include "CLUEAlgo.h"
 #include "LayerTilesGPU.h"
 #include "PointsPtr.h"
+#include <iostream>
 
 class CLUEAlgoGPU : public CLUEAlgo {
   // inheriate from CLUEAlgo
@@ -36,6 +37,10 @@ class CLUEAlgoGPU : public CLUEAlgo {
 
     // private methods
     void init_device(){
+
+      cudaDeviceProp props;
+      cudaGetDeviceProperties(&props, 0);
+      std::cout << "0: " << props.name << ": " << props.major << "." << props.minor << std::endl;
       unsigned int reserve = 1000000;
       // input variables
       cudaMalloc(&d_points.x, sizeof(float)*reserve);

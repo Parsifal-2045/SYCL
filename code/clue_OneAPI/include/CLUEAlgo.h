@@ -61,7 +61,7 @@ public:
 
   void clearPoints() { points_.clear(); }
 
-  void makeClusters();
+  void virtual makeClusters();
 
   void infoSeeds();
   void infoHits();
