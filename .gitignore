@@ -35,3 +35,7 @@ code/clue_OneAPI/mainSYCL
 #VSCode properties
 code/.vscode/*.json
 .vscode/*.json
+
+#graphs 
+*.png
+*.jpg
