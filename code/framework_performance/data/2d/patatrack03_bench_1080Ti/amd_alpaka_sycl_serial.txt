@@ -1,0 +1,14 @@
+# run 1000 events on device cpu with 1 threads
+6.0129,6.0326,6.0134,6.0073,6.0008,6.0455,6.0336,6.0230,6.0531,6.0221
+# run 1000 events on device cpu with 2 threads
+11.6474,11.6659,11.6396,11.6235,11.6961,11.6543
+# run 1000 events on device cpu with 4 threads
+21.9988,21.9099,21.9963,21.9723,22.0170,21.9858,22.0146,22.0705
+# run 1000 events on device cpu with 6 threads
+31.7044,31.7336,31.8114,31.7317,31.8622,31.8496,31.8072
+# run 1000 events on device cpu with 8 threads
+40.7888,40.6687,40.8896,40.6807,40.6344,40.8326
+# run 1000 events on device cpu with 10 threads
+48.8446,47.2925
+# run 1000 events on device cpu with 12 threads
+56.0518,56.2627,56.1415

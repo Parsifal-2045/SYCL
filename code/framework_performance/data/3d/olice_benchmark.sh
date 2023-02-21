@@ -1,0 +1,40 @@
+#gpu
+#for i in {1..10}; do numactl -N 1 ./sycl --dim 3 --device level_zero --maxEvents 10000 --numberOfThreads 1 >> gpu_1.txt; sleep 1; done
+#for i in {1..10}; do numactl -N 1 ./sycl --dim 3 --device level_zero --maxEvents 10000 --numberOfThreads 2 >> gpu_2.txt; sleep 1; done
+#for i in {1..10}; do numactl -N 1 ./sycl --dim 3 --device level_zero --maxEvents 10000 --numberOfThreads 4 >> gpu_4.txt; sleep 1; done
+#for i in {1..10}; do numactl -N 1 ./sycl --dim 3 --device level_zero --maxEvents 10000 --numberOfThreads 6 >> gpu_6.txt; sleep 1; done
+#for i in {1..10}; do numactl -N 1 ./sycl --dim 3 --device level_zero --maxEvents 10000 --numberOfThreads 8 >> gpu_8.txt; sleep 1; done
+#for i in {1..10}; do numactl -N 1 ./sycl --dim 3 --device level_zero --maxEvents 10000 --numberOfThreads 10 >> gpu_10.txt; sleep 1; done
+#for i in {1..10}; do numactl -N 1 ./sycl --dim 3 --device level_zero --maxEvents 10000 --numberOfThreads 12 >> gpu_12.txt; sleep 1; done
+#for i in {1..10}; do numactl -N 1 ./sycl --dim 3 --device level_zero --maxEvents 10000 --numberOfThreads 14 >> gpu_14.txt; sleep 1; done
+#for i in {1..10}; do numactl -N 1 ./sycl --dim 3 --device level_zero --maxEvents 10000 --numberOfThreads 16 >> gpu_16.txt; sleep 1; done
+#for i in {1..10}; do numactl -N 1 ./sycl --dim 3 --device level_zero --maxEvents 10000 --numberOfThreads 18 >> gpu_18.txt; sleep 1; done
+#for i in {1..10}; do numactl -N 1 ./sycl --dim 3 --device level_zero --maxEvents 10000 --numberOfThreads 20 >> gpu_20.txt; sleep 1; done
+
+#cpu
+#for i in {1..10}; do taskset -c 0 ./sycl --dim 3 --device cpu --maxEvents 100 --numberOfThreads 1 >> cpu_1.txt; sleep 1; done
+#for i in {1..10}; do taskset -c 0-1 ./sycl --dim 3 --device cpu --maxEvents 1000 --numberOfThreads 2 >> cpu_2.txt; sleep 1; done
+#for i in {1..10}; do taskset -c 0-3 ./sycl --dim 3 --device cpu --maxEvents 1000 --numberOfThreads 4 >> cpu_4.txt; sleep 1; done
+#for i in {1..10}; do taskset -c 0-5 ./sycl --dim 3 --device cpu --maxEvents 1000 --numberOfThreads 6 >> cpu_6.txt; sleep 1; done
+#for i in {1..10}; do taskset -c 0-7 ./sycl --dim 3 --device cpu --maxEvents 1000 --numberOfThreads 8 >> cpu_8.txt; sleep 1; done
+for i in {1..10}; do taskset -c 0-9 ./sycl --dim 3 --device cpu --maxEvents 10000 --numberOfThreads 10 >> cpu_10.txt; sleep 1; done
+for i in {1..10}; do taskset -c 0-11 ./sycl --dim 3 --device cpu --maxEvents 10000 --numberOfThreads 12 >> cpu_12.txt; sleep 1; done
+for i in {1..10}; do taskset -c 0-13 ./sycl --dim 3 --device cpu --maxEvents 10000 --numberOfThreads 14 >> cpu_14.txt; sleep 1; done
+for i in {1..10}; do taskset -c 0-15 ./sycl --dim 3 --device cpu --maxEvents 10000 --numberOfThreads 16 >> cpu_16.txt; sleep 1; done
+for i in {1..10}; do taskset -c 0-17 ./sycl --dim 3 --device cpu --maxEvents 10000 --numberOfThreads 18 >> cpu_18.txt; sleep 1; done
+for i in {1..10}; do taskset -c 0-19 ./sycl --dim 3 --device cpu --maxEvents 10000 --numberOfThreads 20 >> cpu_20.txt; sleep 1; done
+for i in {1..10}; do taskset -c 0-21 ./sycl --dim 3 --device cpu --maxEvents 10000 --numberOfThreads 22 >> cpu_22.txt; sleep 1; done
+for i in {1..10}; do taskset -c 0-23 ./sycl --dim 3 --device cpu --maxEvents 10000 --numberOfThreads 24 >> cpu_24.txt; sleep 1; done
+for i in {1..10}; do taskset -c 0-25 ./sycl --dim 3 --device cpu --maxEvents 10000 --numberOfThreads 26 >> cpu_26.txt; sleep 1; done
+for i in {1..10}; do taskset -c 0-27 ./sycl --dim 3 --device cpu --maxEvents 10000 --numberOfThreads 28 >> cpu_28.txt; sleep 1; done
+for i in {1..10}; do taskset -c 0-29 ./sycl --dim 3 --device cpu --maxEvents 10000 --numberOfThreads 30 >> cpu_30.txt; sleep 1; done
+for i in {1..10}; do taskset -c 0-31 ./sycl --dim 3 --device cpu --maxEvents 10000 --numberOfThreads 32 >> cpu_32.txt; sleep 1; done
+for i in {1..10}; do taskset -c 0-33 ./sycl --dim 3 --device cpu --maxEvents 10000 --numberOfThreads 34 >> cpu_34.txt; sleep 1; done
+for i in {1..10}; do taskset -c 0-35 ./sycl --dim 3 --device cpu --maxEvents 10000 --numberOfThreads 36 >> cpu_36.txt; sleep 1; done
+for i in {1..10}; do taskset -c 0-37 ./sycl --dim 3 --device cpu --maxEvents 10000 --numberOfThreads 38 >> cpu_38.txt; sleep 1; done
+for i in {1..10}; do taskset -c 0-39 ./sycl --dim 3 --device cpu --maxEvents 10000 --numberOfThreads 40 >> cpu_40.txt; sleep 1; done
+for i in {1..10}; do taskset -c 0-41 ./sycl --dim 3 --device cpu --maxEvents 10000 --numberOfThreads 42 >> cpu_42.txt; sleep 1; done
+for i in {1..10}; do taskset -c 0-43 ./sycl --dim 3 --device cpu --maxEvents 10000 --numberOfThreads 44 >> cpu_44.txt; sleep 1; done
+for i in {1..10}; do taskset -c 0-47 ./sycl --dim 3 --device cpu --maxEvents 10000 --numberOfThreads 46 >> cpu_46.txt; sleep 1; done
+for i in {1..10}; do taskset -c 0-49 ./sycl --dim 3 --device cpu --maxEvents 10000 --numberOfThreads 48 >> cpu_48.txt; sleep 1; done
+for i in {1..10}; do taskset -c 0-51 ./sycl --dim 3 --device cpu --maxEvents 10000 --numberOfThreads 50 >> cpu_50.txt; sleep 1; done
